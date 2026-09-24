@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.9.1 — 24/09/2026
+- La casella della tolleranza sulla pioggia («Pioggia oraria e a 3 ore ± mm») è sempre visibile: con gli aeroporti, che non danno i millimetri, è disattivata e spiega perché.
+- «Pioggia indice» diventa **«Pioggia giornaliera»** in entrambe le classifiche e nelle spiegazioni, per distinguerla dalla pioggia oraria e a 3 ore.
+
 ## v1.9.0 — 24/09/2026
 - Classifica a punti: tutte le soglie sono **impostabili** sulla pagina (temperatura, vento medio, vento massimo, oltre alla pioggia), con un pulsante per tornare ai valori predefiniti; il browser le ricorda e la classifica si ricalcola subito.
 - Spiegazione estesa, con esempi, della pioggia oraria e a 3 ore e del significato di «x su y».

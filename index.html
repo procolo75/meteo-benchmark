@@ -75,6 +75,7 @@ th.sortable{cursor:pointer;user-select:none}
 .tolbar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:12px;font-size:13px;color:var(--ink2);font-weight:600}
 .tolf{display:inline-flex;align-items:center;gap:6px}
 .tolf input{width:72px;padding:4px 8px}
+.tolf input:disabled{opacity:.45;cursor:not-allowed}
 .tolbar button{padding:4px 10px;font-size:12px}
 th.sortable:hover{color:var(--ink)}
 td.top{background:color-mix(in oklab, var(--s4) 30%, transparent)}
@@ -129,12 +130,12 @@ details li{margin:4px 0}
       <p class="hint" style="margin:0 0 4px">L’unico modello con l’etichetta gialla (<span class="tag">2 gg</span>) non prevede fino a 3 giorni: per lui si usa la previsione di 2 giorni prima, che è più facile. Tienine conto nel confronto.</p>
       <div class="meta" id="meta"></div>
       <div id="note"></div>
-      <p class="hint" style="margin:12px 0 0">Ogni colonna è una piccola gara. <b>Temperatura</b> e <b>vento medio</b>: ora per ora, il modello prende 1 punto quando il valore previsto è entro la soglia da quello misurato. <b>Vento massimo</b>: giorno per giorno, 1 punto quando il massimo del giorno è entro la soglia. «<b>x su y</b>» vuol dire x punti su y ore (o giorni) confrontate; tra parentesi la percentuale. Le soglie si cambiano qui sotto e la classifica si aggiorna subito. Per la pioggia giornaliera vale l’indice spiegato nella classifica per errore.</p>
+      <p class="hint" style="margin:12px 0 0">Ogni colonna è una piccola gara. <b>Temperatura</b> e <b>vento medio</b>: ora per ora, il modello prende 1 punto quando il valore previsto è entro la soglia da quello misurato. <b>Vento massimo</b>: giorno per giorno, 1 punto quando il massimo del giorno è entro la soglia. «<b>x su y</b>» vuol dire x punti su y ore (o giorni) confrontate; tra parentesi la percentuale. Le soglie si cambiano qui sotto e la classifica si aggiorna subito. La <b>pioggia giornaliera</b> è un indice da 0 a 1 calcolato giorno per giorno (spiegato nella classifica per errore); la <b>pioggia oraria e a 3 ore</b> guarda invece le singole ore, come spiegato qui sotto.</p>
       <div class="tolbar">
         <label class="tolf">Temperatura ±<input type="number" id="tolT" min="0" step="0.5"> °C</label>
         <label class="tolf">Vento medio ±<input type="number" id="tolW" min="0" step="1"> km/h</label>
         <label class="tolf">Vento massimo ±<input type="number" id="tolWX" min="0" step="1"> km/h</label>
-        <label class="tolf hidden" id="tolRBox">Pioggia ±<input type="number" id="tolR" min="0" step="0.1"> mm</label>
+        <label class="tolf" id="tolRBox">Pioggia oraria e a 3 ore ±<input type="number" id="tolR" min="0" step="0.1"> mm <span class="na" id="tolRNote" style="font-weight:400"></span></label>
         <button type="button" id="tolReset">Soglie predefinite</button>
       </div>
       <details style="margin-top:10px">
@@ -162,7 +163,7 @@ details li{margin:4px 0}
         <ul>
           <li><b>Errore medio</b> (temperatura e vento): di quanto sbaglia in media ogni ora, in più o in meno. Più basso è meglio.</li>
           <li><b>Errore minimo e massimo</b>: i due casi peggiori nelle due direzioni, con il segno (non in valore assoluto). L’errore è <i>previsto − misurato</i>: il <b>massimo</b> è la volta che ha esagerato di più in eccesso (+6,0 °C = ha previsto 6 gradi in più del reale), il <b>minimo</b> la volta che ha sbagliato di più in difetto (−4,5 °C = 4 gradi e mezzo in meno). Insieme dicono quanto può sbagliare nel caso singolo, che l’errore medio da solo nasconde.</li>
-          <li><b>Pioggia, indice</b> (da 0 a 1, più alto è meglio). Si guarda giorno per giorno: il modello “prevede pioggia” se per quel giorno dà almeno 0,5 mm, e alla stazione “è piovuto” se almeno un bollettino dell’aeroporto ha segnalato pioggia o, per le stazioni meteo, se il pluviometro ha misurato almeno 0,2 mm. Poi si contano:
+          <li><b>Pioggia giornaliera, indice</b> (da 0 a 1, più alto è meglio). Si guarda giorno per giorno: il modello “prevede pioggia” se per quel giorno dà almeno 0,5 mm, e alla stazione “è piovuto” se almeno un bollettino dell’aeroporto ha segnalato pioggia o, per le stazioni meteo, se il pluviometro ha misurato almeno 0,2 mm. Poi si contano:
             <ul>
               <li><span class="ok">presi</span>: pioggia prevista e caduta;</li>
               <li><span class="ko">falsi allarmi</span>: pioggia prevista ma non caduta;</li>
@@ -171,7 +172,7 @@ details li{margin:4px 0}
             <b>Indice = presi ÷ (presi + falsi allarmi + mancati).</b> I giorni asciutti previsti asciutti non contano, perché sono facili: altrimenti un modello che dice sempre “non piove” sembrerebbe bravissimo in un mese secco.<br>
             Esempio: in 30 giorni piove 4 volte; il modello prevede pioggia 5 volte e 3 sono giuste. Presi 3, falsi allarmi 2, mancati 1 → 3 ÷ (3+2+1) = <b>0,50</b>. Un modello che non prevede mai pioggia fa 0. Se nel periodo non piove mai e il modello non prevede mai pioggia, l’indice vale 1 (non ha sbagliato niente).</li>
           <li><b>Giorni azzeccati</b> (in grigio, solo informativo): giorni in cui ha indovinato “piove / non piove”, contando anche quelli asciutti.</li>
-          <li><b>Posizione</b>: media dei piazzamenti nelle classifiche di temperatura, vento e pioggia (indice). Con pochi giorni di pioggia nel periodo, la parte pioggia è meno affidabile: meglio usare 30 giorni.</li>
+          <li><b>Posizione</b>: media dei piazzamenti nelle classifiche di temperatura, vento e pioggia giornaliera (indice). Con pochi giorni di pioggia nel periodo, la parte pioggia è meno affidabile: meglio usare 30 giorni.</li>
         </ul>
       </details>
     </div>
@@ -696,7 +697,7 @@ function renderRank(){
     {h:'Vento<br>errore medio', asc:true, v:fW, td:id=>`<td${tW(id)}>${m(id).w?fmt(m(id).w.mae,2)+' km/h':nd}</td>`},
     {h:'Vento<br>errore minimo', asc:false, v:id=>m(id).w&&m(id).w.min, td:id=>`<td class="rng">${m(id).w?sgn(m(id).w.min)+' km/h':''}</td>`},
     {h:'Vento<br>errore massimo', asc:true, v:id=>m(id).w&&m(id).w.max, td:id=>`<td class="rng">${m(id).w?sgn(m(id).w.max)+' km/h':''}</td>`},
-    {h:'Pioggia<br>indice', asc:false, v:fR, td:id=>{ const x=m(id).r; return `<td${tR(id)}>${x?fmt(x.idx,2)+(x.noEvents?' <span class="na">(nessuna pioggia)</span>':''):nd}</td>`; }},
+    {h:'Pioggia giornaliera<br>indice', asc:false, v:fR, td:id=>{ const x=m(id).r; return `<td${tR(id)}>${x?fmt(x.idx,2)+(x.noEvents?' <span class="na">(nessuna pioggia)</span>':''):nd}</td>`; }},
     {h:'Giorni di pioggia<br>presi · falsi allarmi · mancati', asc:false, v:id=>m(id).r&&m(id).r.hit, td:id=>{ const x=m(id).r; return `<td>${x?`<span class="ok">${x.hit}</span> · <span class="ko">${x.fa}</span> · <span class="ko">${x.miss}</span>`:''}</td>`; }},
     {h:'Pioggia<br>giorni azzeccati', asc:false, v:id=>m(id).r&&m(id).r.ok, td:id=>`<td class="na">${m(id).r?`${m(id).r.ok} su ${m(id).r.nd}`:''}</td>`},
   ];
@@ -757,12 +758,14 @@ function renderPts(){
     {h:`Temperatura<br>punti (ore entro ±${ftol(T.t)} °C)`, asc:false, v:fT, td:id=>`<td${cls(rT[id])}>${pts(PT[id])}</td>`}, posCol('Temperatura',rT),
     {h:`Vento medio<br>punti (ore entro ±${ftol(T.w)} km/h)`, asc:false, v:fW, td:id=>`<td${cls(rW[id])}>${pts(PW[id])}</td>`}, posCol('Vento medio',rW),
     {h:`Vento massimo<br>punti (giorni entro ±${ftol(T.wx)} km/h)`, asc:false, v:fX, td:id=>`<td${cls(rX[id])}>${pts(PX[id])}</td>`}, posCol('Vento massimo',rX),
-    {h:'Pioggia<br>indice', asc:false, v:id=>m(id).r&&m(id).r.idx, td:id=>{ const x=m(id).r; return `<td${cls(rR[id])}>${x?fmt(x.idx,2)+(x.noEvents?' <span class="na">(nessuna pioggia)</span>':''):nd}</td>`; }}, posCol('Pioggia',rR),
+    {h:'Pioggia giornaliera<br>indice', asc:false, v:id=>m(id).r&&m(id).r.idx, td:id=>{ const x=m(id).r; return `<td${cls(rR[id])}>${x?fmt(x.idx,2)+(x.noEvents?' <span class="na">(nessuna pioggia)</span>':''):nd}</td>`; }}, posCol('Pioggia giornaliera',rR),
     {h:`Pioggia oraria<br>ore prese${tolTxt}`, asc:false, v:fR1, td:id=>`<td${cls(r1[id])}>${rp(R1[id])}</td>`}, posCol('Pioggia oraria',r1),
     {h:`Pioggia a 3 ore<br>blocchi presi${tolTxt}`, asc:false, v:fR3, td:id=>`<td${cls(r3[id])}>${rp(R3[id])}</td>`}, posCol('Pioggia a 3 ore',r3),
   ];
   sortTable('ptsTbl',cols,rows,positions(rows));
-  $('tolRBox').classList.toggle('hidden',!hasMM);
+  // airports report only whether it rains, not how much: the amount tolerance has nothing to act on
+  $('tolR').disabled=!hasMM;
+  $('tolRNote').textContent=hasMM?'':'(solo con le stazioni meteo che misurano i millimetri: gli aeroporti dicono solo se piove)';
 }
 
 // Numeric lanes, as in dradis' weather charts: one row per model, the day's value printed
@@ -834,7 +837,7 @@ function renderDay(){
     });
     const ev=agg.hit+agg.fa+agg.miss;
     const sum = isR ? fmt(ev?agg.hit/ev:1,2) : agg.n ? fmt(agg.s/agg.n,1) : '—';
-    const sumTip = isR ? `${mlabel(id)} · indice pioggia = ${agg.hit} ÷ (${agg.hit}+${agg.fa}+${agg.miss})` : `${mlabel(id)} · errore medio giornaliero`;
+    const sumTip = isR ? `${mlabel(id)} · indice pioggia giornaliera = ${agg.hit} ÷ (${agg.hit}+${agg.fa}+${agg.miss})` : `${mlabel(id)} · errore medio giornaliero`;
     gl+=`<text x="${SX}" y="${Y(r)}" fill="${c}" font-size="12" font-weight="700" text-anchor="middle" dominant-baseline="central"><title>${esc(sumTip)}</title>${sum}</text>`;
   });
   const svg=(w,body,lab)=>`<svg width="${w}" height="${H}" viewBox="0 0 ${w} ${H}" role="img" aria-label="${lab}" style="display:block;font-family:inherit;font-variant-numeric:tabular-nums">${body}</svg>`;
@@ -842,8 +845,8 @@ function renderDay(){
   const what = isR ? 'mm di pioggia previsti per il giorno' : v==='tmax'?'temperatura massima in °C':v==='tmin'?'temperatura minima in °C':v==='wmean'?'vento medio in km/h':'vento massimo in km/h';
   $('dayHint').textContent = isR
     ? (mode==='err'
-      ? `✓ = pioggia prevista (≥ ${fmt(RAIN_D)} mm) e caduta; FA = falso allarme, prevista ma non caduta; M = mancata, caduta ma non prevista; · = asciutto previsto asciutto, che l’indice non conta. Accanto al nome l’indice pioggia del periodo.`
-      : `Millimetri previsti per il giorno; in grassetto quando il modello “prevede pioggia” (≥ ${fmt(RAIN_D)} mm). In alto se alla stazione è piovuto (in mm, se è una stazione meteo con pluviometro). Accanto al nome l’indice pioggia del periodo.`)
+      ? `✓ = pioggia prevista (≥ ${fmt(RAIN_D)} mm) e caduta; FA = falso allarme, prevista ma non caduta; M = mancata, caduta ma non prevista; · = asciutto previsto asciutto, che l’indice non conta. Accanto al nome l’indice pioggia giornaliera del periodo.`
+      : `Millimetri previsti per il giorno; in grassetto quando il modello “prevede pioggia” (≥ ${fmt(RAIN_D)} mm). In alto se alla stazione è piovuto (in mm, se è una stazione meteo con pluviometro). Accanto al nome l’indice pioggia giornaliera del periodo.`)
     : (mode==='err'
       ? `Errore sul valore del giorno (${what}), previsto − misurato: positivo = previsto più ${isT?'caldo':'forte'}, negativo = più ${isT?'freddo':'debole'}. Accanto al nome la media degli errori in valore assoluto.`
       : `Valori del giorno (${what}): in alto il misurato, sotto quanto previsto da ogni modello. Accanto al nome la media degli errori in valore assoluto. Passa sopra un numero per i dettagli.`);
