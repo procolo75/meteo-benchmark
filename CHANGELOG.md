@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.3.0 — 24/09/2026
+- Nuova **Classifica a punti**, sotto la classifica principale (che resta invariata): 1 punto per ogni ora con temperatura prevista entro ±1 °C dal misurato, 1 punto per ogni ora con vento entro ±10 km/h; per la pioggia l’indice. Posizione in ciascuna delle tre classifiche e ordine per media dei piazzamenti.
+
 ## v1.2.0 — 24/09/2026
 - Tolto il limite di 8 modelli: ora si possono selezionare tutti, anche con i nuovi pulsanti **Tutti** e **Predefiniti**. Oltre l’ottavo, i colori si ripetono con linea tratteggiata e poi puntinata.
 - Aggiunti **Open-Meteo Best match** (attivo di default), ECMWF IFS 9 km, DWD ICON globale, Météo-France ARPEGE globale.

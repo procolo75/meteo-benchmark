@@ -37,6 +37,7 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 ## Cosa mostra la pagina
 
 - **Classifica dei modelli**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
+- **Classifica a punti**: ora per ora il modello prende 1 punto se la temperatura prevista è entro ±1 °C da quella misurata e 1 punto se il vento previsto è entro ±10 km/h; per la pioggia resta l’indice. Per ognuna delle tre voci c’è la posizione, e i modelli sono ordinati per media dei piazzamenti.
 - **Giorno per giorno**, a corsie numeriche: una riga per modello con il valore di ogni giorno stampato nel colore del modello, sotto la riga del misurato. Si può vedere il valore previsto o l’errore (previsto − misurato; per la pioggia ✓ presa, FA falso allarme, M mancata). Accanto al nome, l’errore medio o l’indice pioggia del periodo.
 - **Grafico ora per ora**, con selettore della grandezza: temperatura massima, temperatura minima, vento medio, vento massimo, pioggia.
 - **Periodo selezionabile**: ultimi 7, 14 o 30 giorni (default 30).
