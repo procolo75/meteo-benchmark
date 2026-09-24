@@ -216,12 +216,11 @@ details li{margin:4px 0}
 <script>
 // ---------- Configuration ----------
 const LEAD = 3;   // days between forecast issue and verified day (models with a shorter range use their own `lead`)
-// Best match, one seamless mix per family (Open-Meteo picks the finest component for each place and lead time),
+// One seamless mix per family (Open-Meteo picks the finest component for each place and lead time),
 // the AI models, plus ECMWF IFS (no seamless mix exists) and ItaliaMeteo ICON-2I.
 // At 3 days in Italy each seamless mix equals one of its components (checked 09/2026), so the components are left out;
-// best_match = ICON seamless there. KNMI, DMI and MET Norway seamless = ECMWF IFS 9 km, so they are left out too.
+// best_match equals ICON seamless all over Italy, and KNMI, DMI and MET Norway seamless equal ECMWF IFS 9 km, so they are left out too.
 const MODELS = [
-  {id:'best_match',            label:'Open-Meteo Best match',  def:true},
   {id:'ecmwf_ifs025',          label:'ECMWF IFS 0,25°',        def:true},
   {id:'ecmwf_ifs',             label:'ECMWF IFS 9 km',         def:true},
   {id:'ecmwf_aifs025_single',  label:'ECMWF AIFS (IA)',        def:true},
