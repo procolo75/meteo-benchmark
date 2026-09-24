@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.0 — 24/09/2026
+- Modelli ridotti a Best match, un *seamless* per famiglia e i modelli IA, più ECMWF IFS (0,25° e 9 km, ECMWF non ha un seamless) e ItaliaMeteo ICON-2I: 11 in tutto, tutti attivi di default.
+- Tolti i componenti globali ed europei (ICON globale ed Europa, GFS globale, ARPEGE globale ed Europa, UK Met Office globale, GEM globale): a 3 giorni in Italia ogni seamless coincide già con uno di loro.
+- README: spiegato cosa sono i modelli seamless.
+
 ## v1.4.0 — 24/09/2026
 - La **Classifica a punti** è ora la prima tabella, con città, stazione e periodo; la classifica principale diventa «Classifica per errore» e segue.
 - Tolti JMA Giappone, CMA Cina, MeteoSwiss ICON seamless e DWD ICON-D2.

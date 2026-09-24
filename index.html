@@ -216,28 +216,22 @@ details li{margin:4px 0}
 <script>
 // ---------- Configuration ----------
 const LEAD = 3;   // days between forecast issue and verified day (models with a shorter range use their own `lead`)
-// Each family lists its seamless mix next to its global, European and AI components.
-// At 3 days in Italy the seamless mixes collapse onto one component (checked 09/2026): best_match = ICON seamless = ICON-EU,
-// GFS / ARPEGE / UKMO / GEM seamless = their global (Europe for ARPEGE) run; KNMI, DMI and MET Norway seamless = ECMWF IFS 9 km.
+// Best match, one seamless mix per family (Open-Meteo picks the finest component for each place and lead time),
+// the AI models, plus ECMWF IFS (no seamless mix exists) and ItaliaMeteo ICON-2I.
+// At 3 days in Italy each seamless mix equals one of its components (checked 09/2026), so the components are left out;
+// best_match = ICON seamless there. KNMI, DMI and MET Norway seamless = ECMWF IFS 9 km, so they are left out too.
 const MODELS = [
   {id:'best_match',            label:'Open-Meteo Best match',  def:true},
   {id:'ecmwf_ifs025',          label:'ECMWF IFS 0,25°',        def:true},
-  {id:'ecmwf_ifs',             label:'ECMWF IFS 9 km',         def:false},
+  {id:'ecmwf_ifs',             label:'ECMWF IFS 9 km',         def:true},
   {id:'ecmwf_aifs025_single',  label:'ECMWF AIFS (IA)',        def:true},
   {id:'icon_seamless',         label:'DWD ICON seamless',      def:true},
-  {id:'icon_global',           label:'DWD ICON globale',       def:false},
-  {id:'icon_eu',               label:'DWD ICON Europa',        def:false},
   {id:'italia_meteo_arpae_icon_2i', label:'ItaliaMeteo ICON-2I', def:true, lead:2},
   {id:'gfs_seamless',          label:'NOAA GFS seamless',      def:true},
-  {id:'gfs_global',            label:'NOAA GFS globale',       def:false},
-  {id:'ncep_aigfs025',         label:'NOAA AIGFS (IA)',        def:false},
+  {id:'ncep_aigfs025',         label:'NOAA AIGFS (IA)',        def:true},
   {id:'meteofrance_seamless',  label:'Météo-France seamless',  def:true},
-  {id:'meteofrance_arpege_world', label:'Météo-France ARPEGE globale', def:false},
-  {id:'meteofrance_arpege_europe', label:'Météo-France ARPEGE Europa', def:false},
   {id:'ukmo_seamless',         label:'UK Met Office seamless', def:true},
-  {id:'ukmo_global_deterministic_10km', label:'UK Met Office globale', def:false},
   {id:'gem_seamless',          label:'GEM Canada seamless',    def:true},
-  {id:'gem_global',            label:'GEM Canada globale',     def:false},
 ];
 const NCOL = 8;   // palette size: beyond it colours repeat with a dashed, then dotted line
 const KT2KMH = 1.852;

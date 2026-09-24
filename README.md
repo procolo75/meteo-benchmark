@@ -44,15 +44,15 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 
 ## Modelli
 
-Attivi di default: Open-Meteo Best match, ECMWF IFS 0,25°, ECMWF AIFS (IA), DWD ICON seamless, ItaliaMeteo ICON-2I, NOAA GFS seamless, Météo-France seamless, UK Met Office seamless, GEM Canada seamless.
+Attivi di default (tutti): Open-Meteo Best match, ECMWF IFS 0,25°, ECMWF IFS 9 km, ECMWF AIFS (IA), DWD ICON seamless, ItaliaMeteo ICON-2I, NOAA GFS seamless, NOAA AIGFS (IA), Météo-France seamless, UK Met Office seamless, GEM Canada seamless. Ognuno si può spegnere; **Tutti** e **Predefiniti** li riaccendono. Oltre l’ottavo modello i colori si ripetono con linea tratteggiata.
 
-Attivabili dall’utente: ECMWF IFS 9 km, DWD ICON globale, DWD ICON Europa, NOAA GFS globale, NOAA AIGFS (IA), Météo-France ARPEGE globale, Météo-France ARPEGE Europa, UK Met Office globale, GEM Canada globale.
+**Cosa sono i *seamless*.** Ogni ente meteo ha più modelli: uno globale (tutta la Terra, meno dettaglio), uno regionale (per esempio l’Europa, più dettaglio) e a volte uno locale ancora più fine che prevede solo 1–2 giorni. Il *seamless* è una combinazione fatta da Open-Meteo: per ogni luogo e ogni ora usa il modello più dettagliato che copre quel punto a quella distanza di tempo, e passa al successivo quando quello si ferma. Per questo di ogni famiglia c’è solo il seamless, non i singoli componenti. A 3 giorni di anticipo, in Italia, i modelli locali non arrivano più e ogni seamless coincide con un solo componente (ICON con ICON-EU, Météo-France con ARPEGE Europa, GFS, UK Met Office e GEM con il rispettivo globale).
 
-Per ogni famiglia ci sono il *seamless* e i suoi componenti globale ed europeo, dove esistono, più la versione IA quando c’è. Si possono attivare tutti insieme (pulsante **Tutti**; **Predefiniti** torna alla selezione iniziale). Oltre l’ottavo modello i colori si ripetono con linea tratteggiata e poi puntinata.
+**Best match** è la scelta automatica di Open-Meteo per il luogo: in Italia coincide con DWD ICON seamless, quindi in classifica i due sono a pari merito.
 
-Nota sui *seamless*: a 3 giorni di anticipo, in Italia, ciascuno coincide con uno dei suoi componenti, quindi in classifica compaiono a pari merito. **Best match** e DWD ICON seamless danno gli stessi valori di ICON Europa; Météo-France seamless di ARPEGE Europa; NOAA GFS, UK Met Office e GEM seamless dei rispettivi globali. KNMI, DMI e MET Norway seamless danno gli stessi valori di ECMWF IFS 9 km e non sono in elenco.
+ECMWF non ha un seamless: ci sono le due versioni di IFS (griglia 0,25° e 9 km) e AIFS, la versione a intelligenza artificiale. KNMI, DMI e MET Norway seamless in Italia danno gli stessi valori di ECMWF IFS 9 km e non sono in elenco.
 
-ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la previsione di 2 giorni prima ed è segnato con un’etichetta gialla. Un anticipo minore rende la previsione più facile: nel leggere la classifica va tenuto conto che questi modelli non giocano alla pari.
+ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la previsione di 2 giorni prima ed è segnato con un’etichetta gialla. Un anticipo minore rende la previsione più facile: nel leggere la classifica va tenuto conto che non gioca alla pari.
 
 Se un modello non copre la località scelta, viene escluso dal confronto e indicato nella barra di stato.
 
