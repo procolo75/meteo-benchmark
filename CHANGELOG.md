@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.8.0 — 24/09/2026
+- Tolto il grafico a linee «Andamento ora per ora» (e la libreria Chart.js): la pagina non ha più dipendenze esterne.
+- Classifica per errore: il valore migliore di ogni colonna è evidenziato in giallo, come nella classifica a punti.
+- Stazioni MeteoNetwork indicate con la località (es. «MeteoNetwork · Vomero, Napoli (cmp080)»), ricavata dalle coordinate con OpenStreetMap.
+- Corretto il totale giornaliero della pioggia prevista: il valore orario è la pioggia dell’ora precedente, quindi il giorno va dal valore delle 01:00 a quello delle 24:00 (prima dalle 00:00 alle 23:00, cioè spostato di un’ora). Stessa regola per i millimetri misurati dalle stazioni.
+- Verificato l’allineamento degli orari: aeroporti, stazioni MeteoHub (convertite da UTC) e modelli sono tutti in ora italiana.
+
 ## v1.7.0 — 24/09/2026
 - Classifica a punti: nuove colonne **Pioggia oraria** e **Pioggia a 3 ore**. Contano solo le ore (o i blocchi 00–03, 03–06…) in cui è piovuto o il modello prevedeva almeno 0,2 mm; 1 punto quando ha previsto pioggia ed è piovuto davvero. Con le stazioni meteo serve anche che la quantità prevista sia entro una **tolleranza in mm impostabile** sulla pagina (predefinita 1 mm, ricordata dal browser); per gli aeroporti conta solo sì/no.
 - La posizione in queste due colonne si basa sulla percentuale di punti sulle ore piovute o previste, così chi prevede sempre pioggia non viene premiato. Passando sopra i numeri si vedono falsi allarmi, ore mancate e prese fuori tolleranza.

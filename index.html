@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meteo Benchmark</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   color-scheme: light;
@@ -14,7 +13,6 @@
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
   --obs:#0b0b0b;
   --good:#006300; --bad:#d03b3b;
-  --rainband:rgba(42,120,214,.12);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -25,7 +23,6 @@
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
     --obs:#ffffff;
     --good:#0ca30c; --bad:#e66767;
-    --rainband:rgba(57,135,229,.20);
   }
 }
 *{box-sizing:border-box}
@@ -74,14 +71,7 @@ td{font-variant-numeric:tabular-nums}
 .lanes-scroll{flex:1;min-width:0;overflow-x:auto}
 .na{color:var(--muted)}
 .rank{font-weight:700;width:28px}
-.best{font-weight:700}
 td.top{background:color-mix(in oklab, var(--s4) 30%, transparent)}
-.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink2);margin:4px 0 12px}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend .ln{width:18px;height:0;border-top:3px solid var(--c,var(--obs));display:inline-block}
-.legend .ln.s1{border-top-style:dashed}
-.legend .ln.s2{border-top-style:dotted}
-.chartbox{position:relative;height:340px}
 .ok{color:var(--good);font-weight:600}
 .ko{color:var(--bad);font-weight:600}
 .hidden{display:none}
@@ -186,20 +176,6 @@ details li{margin:4px 0}
     </div>
 
     <div class="card">
-      <div class="row" style="justify-content:space-between">
-        <div>
-          <h2>Andamento ora per ora</h2>
-          <p class="hint" id="tsHint" style="margin:0"></p>
-        </div>
-        <div class="f"><span>Variabile</span>
-          <div class="seg" id="varSeg"></div>
-        </div>
-      </div>
-      <div class="legend" id="legend2" style="margin-top:12px"></div>
-      <div class="chartbox"><canvas id="cTS"></canvas></div>
-    </div>
-
-    <div class="card">
       <details>
         <summary>Fonti e metodo</summary>
         <ul>
@@ -207,6 +183,7 @@ details li{margin:4px 0}
           <li><b>Misure:</b> bollettini meteo degli aeroporti (METAR, Aeronautica Militare/ENAV), dall’archivio dell’Iowa Environmental Mesonet. Di solito c’è una misura ogni 30 minuti; la temperatura è arrotondata al grado.</li>
           <li><b>Stazioni meteo (ultimi 7 giorni):</b> reti regionali ufficiali (ARPA, Protezione Civile) e rete amatoriale MeteoNetwork, tramite <a href="https://meteohub.agenziaitaliameteo.it/" target="_blank" rel="noopener">MeteoHub – Agenzia ItaliaMeteo</a>, licenza CC-BY 4.0. Misure ogni 10 minuti, pioggia in millimetri; ora piovosa o giorno piovoso se ≥ 0,2 mm. Senza registrazione MeteoHub conserva solo gli ultimi 10 giorni, per questo il periodo è limitato a 7. Non coperte: Valle d’Aosta, Abruzzo e quasi tutto il Lazio.</li>
           <li><b>Abbinamento orario:</b> a ogni ora si associa la misura più vicina (entro ±30 minuti). Per la pioggia si guarda l’ora precedente, come nel dato del modello.</li>
+          <li><b>Ore della pioggia:</b> il valore di pioggia di un’ora (per esempio le 11:00) è quella caduta nell’ora precedente (10–11), sia nei modelli sia nelle misure; il totale di un giorno va dalle 00 alle 24. Temperatura e vento sono invece i valori a quell’ora.</li>
           <li><b>Pioggia (aeroporti):</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Quindi si verifica solo sì/no. Giorno piovoso previsto se ≥ 0,5 mm; nel grafico orario, ora piovosa se ≥ 0,1 mm.</li>
           <li><b>Vento:</b> intensità media a 10 m; nodi convertiti in km/h (×1,852).</li>
           <li><b>Modelli a corto raggio:</b> ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la sua corsa di 2 giorni (48 ore) prima. Parte avvantaggiato ed è segnato con l’etichetta gialla.</li>
@@ -283,7 +260,7 @@ const STATIONS = [["LIBA","Amendola",41.5381,15.7139,60],["LIBC","Crotone",38.99
 const st = {
   stations:STATIONS, place:null, stationList:[], station:null,
   active:new Set(MODELS.filter(m=>m.def).map(m=>m.id)),
-  slot:{}, data:null, rainTol:RAIN_TOL, tsVar:'t', dayMode:'val', chart:null
+  slot:{}, data:null, rainTol:RAIN_TOL, dayMode:'val'
 };
 
 // ---------- Helpers ----------
@@ -295,9 +272,7 @@ const mlabel = id => mdef(id).label + (mlead(id)!==LEAD ? ` (${mlead(id)} gg)` :
 const mname = id => mdef(id).label + (mlead(id)!==LEAD ? ` <span class="tag">${mlead(id)} gg</span>` : '');
 const mcolor = id => css('--s'+(st.slot[id]%NCOL+1));
 const mstyle = id => Math.floor(st.slot[id]/NCOL);   // 0 solid, 1 dashed, 2 dotted
-const mdash = id => [[],[6,4],[2,3]][mstyle(id)] || [];
 const mdot = id => `<span class="dot${mstyle(id)?' s'+mstyle(id):''}" style="--c:${mcolor(id)}"></span>`;
-const mline = id => `<i class="ln${mstyle(id)?' s'+mstyle(id):''}" style="--c:${mcolor(id)}"></i>`;
 const fmt = (v,d=1) => v==null||isNaN(v) ? '—' : v.toFixed(d).replace('.',',');
 const sgn = (v,d=1) => { if(v==null||isNaN(v)) return '—'; const r=+v.toFixed(d); return (r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(d).replace('.',','); };
 const pad = n => String(n).padStart(2,'0');
@@ -371,6 +346,7 @@ function pickPlace(p){
   findMH(p).then(list=>{
     if(st.place!==p) return;
     st.stationList=[...list,...airports]; fillStations();
+    nameMNW(list.filter(s=>s.net==='mnw'),p);
     const a0=airports[0];
     setStatus(list.length
       ? `Trovate ${list.length} stazioni meteo entro ${MH_R} km, più gli aeroporti (${a0.name} a ${Math.round(a0.dist)} km). Le stazioni meteo permettono solo il periodo di 7 giorni. Premi “Confronta”.`
@@ -401,6 +377,28 @@ function syncPeriod(){
   const mh=st.station&&st.station.src==='mh', sel=$('period');
   [...sel.options].forEach(o=>{ o.disabled= mh && +o.value>MH_DAYS; });
   if(mh && +sel.value>MH_DAYS) sel.value=String(MH_DAYS);
+}
+
+// MeteoHub gives MeteoNetwork stations by code only (cmp080): name them after the place they stand in, from
+// OpenStreetMap (Nominatim: one request per second at most, results kept in the browser)
+async function nameMNW(list,p){
+  let cache={}; try{ cache=JSON.parse(localStorage.getItem('mb_mnw')||'{}'); }catch(e){}
+  for(const s of list){
+    if(st.place!==p) return;
+    let where=cache[s.sid];
+    if(!where){
+      try{
+        const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language=it&lat=${s.lat}&lon=${s.lon}`);
+        const a=(await r.json()).address||{};
+        const local=[a.quarter,a.neighbourhood,a.hamlet,a.suburb&&!/^Municipalit/i.test(a.suburb)?a.suburb:null].find(Boolean);
+        const town=a.city||a.town||a.village||a.municipality;
+        where=[local,town].filter(Boolean).filter((x,i,A)=>A.indexOf(x)===i).join(', ');
+        if(where){ cache[s.sid]=where; try{ localStorage.setItem('mb_mnw',JSON.stringify(cache)); }catch(e){} }
+      }catch(e){ return; }
+      await new Promise(r=>setTimeout(r,1100));
+    }
+    if(where && st.place===p){ s.name=`MeteoNetwork · ${where} (${s.sid})`; fillStations(); }
+  }
 }
 
 async function mhGet(params){
@@ -528,7 +526,7 @@ async function run(){
   setStatus(`Scarico le misure di ${s.name} e le previsioni dei modelli…`);
   try{
     let done=0;
-    const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],days[days.length-1],s.lat.toFixed(4),s.lon.toFixed(4));
+    const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],ymd(new Date(tms(days[days.length-1])+24*HOUR)),s.lat.toFixed(4),s.lon.toFixed(4));
       done++; setStatus(`Scarico le previsioni… ${done}/${MODELS.length} modelli`); return r; });
     const [obsRaw, fcs]=await Promise.all([ s.src==='mh' ? fetchObsMH(s,days) : fetchObs(s.sid,start,end), pool(tasks,3) ]);
     const fc={}; MODELS.forEach((m,i)=>fc[m.id]=fcs[i]);
@@ -570,16 +568,18 @@ function buildData(days,obs,fc){
       rain:L.some(o=>o.wet), rainH:new Set(L.filter(o=>o.wet).map(o=>o.s.slice(11,13))).size };
     // rain gauge (MeteoHub): the day's total in mm decides, as the models' daily sum does
     if(od[d] && obs.noRain){ od[d].rain=null; od[d].rainH=null; }
-    const M=L.filter(o=>o.mm!=null);
+    const M=obs.filter(o=>o.mm!=null && ymd(new Date(o.t-60e3))===d);   // hourly totals are stamped at the hour's end
     if(od[d] && M.length){ od[d].rainMM=M.reduce((a,o)=>a+o.mm,0); od[d].rain=od[d].rainMM>=RAIN_G; }
   });
   // daily forecasts
   const dayIdx={}; days.forEach(d=>dayIdx[d]=times.map((t,i)=>t.startsWith(d)?i:-1).filter(i=>i>=0));
+  // precipitation at HH:00 is the sum of the hour before, so a day's rain runs from the 01:00 to the next 00:00 value
+  const rainIdx={}; days.forEach(d=>rainIdx[d]=T.map((t,i)=>ymd(new Date(t-HOUR))===d?i:-1).filter(i=>i>=0));
   const fd={};
   for(const [id,f] of Object.entries(fc)){ if(!f.ok) continue; fd[id]={};
     days.forEach(d=>{
       const ii=dayIdx[d];
-      const t=ii.map(i=>f.t[i]).filter(v=>v!=null), w=ii.map(i=>f.w[i]).filter(v=>v!=null), p=ii.map(i=>f.p[i]).filter(v=>v!=null);
+      const t=ii.map(i=>f.t[i]).filter(v=>v!=null), w=ii.map(i=>f.w[i]).filter(v=>v!=null), p=rainIdx[d].map(i=>f.p[i]).filter(v=>v!=null);
       fd[id][d]= t.length<20 ? null : { tmax:Math.max(...t), tmin:Math.min(...t),
         wmean:w.length?w.reduce((a,b)=>a+b,0)/w.length:null, wmax:w.length?Math.max(...w):null,
         psum:p.length>=20?p.reduce((a,b)=>a+b,0):null };
@@ -612,7 +612,7 @@ function buildData(days,obs,fc){
 }
 
 // ---------- Rendering ----------
-function renderAll(){ renderMeta(); renderRank(); renderPts(); renderDayMode(); renderDay(); renderVarSeg(); renderTS(); }
+function renderAll(){ renderMeta(); renderRank(); renderPts(); renderDayMode(); renderDay(); }
 function activeOk(){ return MODELS.filter(m=>st.active.has(m.id) && st.data.fc[m.id].ok).map(m=>m.id); }
 
 function renderMeta(){
@@ -643,7 +643,7 @@ function renderRank(){
     .sort((a,b)=>(a.score??99)-(b.score??99));
   const bestOf=(f,asc)=>{ const v=ids.map(f).filter(x=>x!=null); return v.length?(asc?Math.min(...v):Math.max(...v)):null; };
   const bT=bestOf(fT,true), bW=bestOf(fW,true), bR=bestOf(fR,false);
-  const cls=(v,b)=>v!=null&&b!=null&&Math.abs(v-b)<1e-9?' class="best"':'';
+  const cls=(v,b)=>v!=null&&b!=null&&Math.abs(v-b)<1e-9?' class="top"':'';
   let pos=0, prev=null;
   let h=`<thead><tr><th class="l">#</th><th class="l">Modello</th><th>Temperatura<br>errore medio</th><th>Temperatura<br>errore minimo</th><th>Temperatura<br>errore massimo</th><th>Vento<br>errore medio</th><th>Vento<br>errore minimo</th><th>Vento<br>errore massimo</th><th>Pioggia<br>indice</th><th>Giorni di pioggia<br>presi · falsi allarmi · mancati</th><th>Pioggia<br>giorni azzeccati</th></tr></thead><tbody>`;
   rows.forEach((r,i)=>{ const x=m(r.id);
@@ -817,60 +817,6 @@ function renderDayMode(){
     seg.appendChild(b); });
 }
 
-function renderVarSeg(){
-  const seg=$('varSeg'); seg.innerHTML='';
-  [['t','Temperatura'],['w','Vento'],['r','Pioggia']].forEach(([k,l])=>{
-    const b=document.createElement('button'); b.type='button'; b.textContent=l; b.className=st.tsVar===k?'on':'';
-    b.addEventListener('click',()=>{ st.tsVar=k; renderVarSeg(); renderTS(); });
-    seg.appendChild(b); });
-}
-
-function legendHTML(withObs){
-  return (withObs?`<span><i class="ln"></i>Misurato</span>`:'')+
-    activeOk().map(id=>`<span>${mline(id)}${mname(id)}</span>`).join('');
-}
-
-const rainBands={ id:'rainBands', beforeDatasetsDraw(ch,_,opts){
-  const oR=opts.oR; if(!oR) return; const {ctx,chartArea:a,scales:{x}}=ch; ctx.save(); ctx.fillStyle=opts.color;
-  oR.forEach((w,i)=>{ if(w){ const x0=x.getPixelForValue(i-1), x1=x.getPixelForValue(i); ctx.fillRect(Math.max(a.left,x0),a.top,Math.max(1,x1-x0),a.bottom-a.top); } });
-  ctx.restore(); } };
-
-function renderTS(){
-  if(typeof Chart==='undefined'){ $('tsHint').textContent='Grafico non disponibile: libreria non caricata (serve internet).'; return; }
-  const D=st.data, v=st.tsVar, ids=activeOk();
-  const ink2=css('--ink2'), grid=css('--grid'), surf=css('--surface'), ink=css('--ink'), ring=css('--axis');
-  const labels=D.times.map(t=>`${new Date(tms(t)).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'})} ${t.slice(11,16)}`);
-  const datasets=[];
-  if(v!=='r') datasets.push({label:'Misurato',data:v==='t'?D.oT:D.oW.map(x=>x==null?null:Math.round(x*10)/10),borderColor:css('--obs'),backgroundColor:css('--obs'),borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:true,order:0});
-  ids.forEach(id=>{ const f=D.fc[id];
-    datasets.push({label:mlabel(id),data:v==='t'?f.t:v==='w'?f.w:f.p,borderColor:mcolor(id),backgroundColor:mcolor(id),borderDash:mdash(id),borderWidth:1.6,pointRadius:0,pointHoverRadius:4,spanGaps:false,order:1}); });
-  const unit=v==='t'?' °C':v==='w'?' km/h':' mm';
-  const days=D.days.length;
-  const opts={
-    responsive:true, maintainAspectRatio:false, animation:false,
-    interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:false},
-      tooltip:{backgroundColor:surf,titleColor:ink,bodyColor:ink,borderColor:ring,borderWidth:1,padding:10,boxPadding:4,usePointStyle:true,
-        itemSort:(a,b)=>(b.raw??-1e9)-(a.raw??-1e9),
-        callbacks:{title:c=>labels[c[0].dataIndex]+(v==='r'?(D.oR[c[0].dataIndex]?' · pioggia misurata: sì':' · pioggia misurata: no'):''),
-                   label:c=>` ${c.dataset.label}: ${c.raw==null?'n.d.':fmt(c.raw,1)+unit}`}},
-      rainBands: v==='r' ? {oR:D.oR,color:css('--rainband')} : {}},
-    scales:{
-      x:{grid:{display:false},border:{color:ring},ticks:{color:ink2,maxRotation:0,autoSkip:false,
-        callback:(val,i)=>{ const t=D.times[i]; if(t.slice(11,13)!=='00') return ''; const k=Math.round((tms(t)-tms(D.times[0]))/864e5); return (days<=14||k%3===0)?labels[i].split(' ').slice(0,2).join(' '):''; }}},
-      y:{grid:{color:grid},border:{display:false},ticks:{color:ink2},beginAtZero:v!=='t',title:{display:true,text:v==='t'?'°C':v==='w'?'km/h':'mm/ora',color:ink2}}
-    }
-  };
-  $('tsHint').textContent = v==='r'
-    ? 'Fasce azzurre = ore in cui alla stazione pioveva. Linee = millimetri all’ora previsti 3 giorni prima (meno per i modelli con l’etichetta gialla).'
-    : 'Linea spessa = misurato. Linee colorate = previsioni emesse 3 giorni prima (meno per i modelli con l’etichetta gialla).';
-  $('legend2').innerHTML = v==='r'
-    ? `<span><i class="ln" style="background:var(--rainband);border:0;height:12px;width:12px"></i>Pioggia misurata</span>`+legendHTML(false)
-    : legendHTML(true);
-  if(st.chart) st.chart.destroy();
-  st.chart=new Chart($('cTS'),{type:'line',data:{labels,datasets},options:opts,plugins:[rainBands]});
-}
-
 // ---------- Events ----------
 window.addEventListener('error',e=>setStatus('Errore nella pagina: '+e.message,true));
 window.addEventListener('unhandledrejection',e=>setStatus('Errore: '+(e.reason&&e.reason.message||e.reason),true));
@@ -886,7 +832,6 @@ $('rainTol').addEventListener('input',e=>{ const v=parseFloat(String(e.target.va
 $('dayVar').addEventListener('change',()=>{ if(st.data) renderDay(); });
 let resizeT; window.addEventListener('resize',()=>{ clearTimeout(resizeT); resizeT=setTimeout(()=>{ if(st.data) renderDay(); },150); });
 try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ renderChips(); if(st.data) renderAll(); }); }catch(e){}
-if(typeof Chart==='undefined') setStatus('Libreria dei grafici non caricata: serve la connessione internet.',true);
 </script>
 </body>
 </html>

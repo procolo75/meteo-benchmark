@@ -34,12 +34,13 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 
 **Esempio di indice pioggia:** in 30 giorni piove 4 volte; il modello prevede pioggia 5 volte e 3 sono giuste. Presi 3, falsi allarmi 2, mancati 1 → 3 ÷ (3+2+1) = **0,50**. Un modello che non prevede mai pioggia fa 0. Se nel periodo non piove mai e il modello non prevede mai pioggia, l’indice vale 1 (non ha sbagliato niente).
 
+**Ore della pioggia.** Come indica Open-Meteo, la pioggia oraria è la *somma dell’ora precedente*: il valore delle 11:00 è la pioggia caduta tra le 10 e le 11. Le misure sono abbinate allo stesso modo, e il totale di un giorno va dal valore delle 01:00 a quello delle 24:00. Temperatura e vento sono invece i valori a quell’ora. Tutti gli orari sono in ora italiana (le stazioni MeteoHub, in UTC, vengono convertite).
+
 ## Cosa mostra la pagina
 
 - **Classifica a punti**: ora per ora il modello prende 1 punto se la temperatura prevista è entro ±1 °C da quella misurata e 1 punto se il vento medio è entro ±5 km/h; giorno per giorno, 1 punto se il vento massimo del giorno è entro ±10 km/h; per la pioggia giornaliera resta l’indice. In più due colonne di **pioggia oraria** e **a 3 ore**: contano solo le ore (o i blocchi di 3 ore) in cui è piovuto o era prevista pioggia (≥ 0,2 mm), e il modello prende 1 punto quando ha previsto pioggia ed è piovuto; con le stazioni meteo serve anche che i millimetri previsti siano entro una **tolleranza impostabile** sulla pagina (predefinita 1 mm), per gli aeroporti conta solo sì/no. La posizione nella pioggia oraria e a 3 ore si basa sulla percentuale di punti, per non premiare chi prevede pioggia sempre. I modelli sono ordinati per media dei piazzamenti nelle colonne disponibili.
-- **Classifica per errore**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
+- **Classifica per errore**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato in giallo e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
 - **Giorno per giorno**, a corsie numeriche: una riga per modello con il valore di ogni giorno stampato nel colore del modello, sotto la riga del misurato. Si può vedere il valore previsto o l’errore (previsto − misurato; per la pioggia ✓ presa, FA falso allarme, M mancata). Accanto al nome, l’errore medio o l’indice pioggia del periodo.
-- **Grafico ora per ora**, con selettore della grandezza: temperatura massima, temperatura minima, vento medio, vento massimo, pioggia.
 - **Periodo selezionabile**: ultimi 7, 14 o 30 giorni (default 30).
 
 ## Modelli
@@ -60,7 +61,7 @@ Se un modello non copre la località scelta, viene escluso dal confronto e indic
 
 - **Previsioni:** [Open-Meteo – Previous Runs API](https://open-meteo.com/en/docs/previous-runs-api), l’archivio delle corse passate dei modelli (dal 2024).
 - **Misure (aeroporti):** bollettini METAR degli aeroporti italiani (Aeronautica Militare / ENAV), dall’archivio dell’[Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/request/download.phtml?network=IT__ASOS).
-- **Misure (stazioni meteo):** reti regionali ufficiali (ARPA, Protezione Civile, Meteotrentino, SIR Toscana…) e rete amatoriale [MeteoNetwork](https://www.meteonetwork.it/), tramite [MeteoHub – Agenzia ItaliaMeteo](https://meteohub.agenziaitaliameteo.it/), licenza CC-BY 4.0. Temperatura e vento ogni 10 minuti (MeteoNetwork di solito ogni ora), pioggia in millimetri.
+- **Misure (stazioni meteo):** reti regionali ufficiali (ARPA, Protezione Civile, Meteotrentino, SIR Toscana…) e rete amatoriale [MeteoNetwork](https://www.meteonetwork.it/), tramite [MeteoHub – Agenzia ItaliaMeteo](https://meteohub.agenziaitaliameteo.it/), licenza CC-BY 4.0. Temperatura e vento ogni 10 minuti (MeteoNetwork di solito ogni ora), pioggia in millimetri. Le stazioni MeteoNetwork, di cui MeteoHub dà solo il codice, sono indicate con la località ricavata dalle coordinate tramite [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/).
 - **Ricerca località:** [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api).
 
 Nessuna chiave API, nessuna registrazione: tutte le richieste partono dal browser.
@@ -81,7 +82,7 @@ Basta aprire `index.html` con un browser (serve la connessione internet per scar
 open index.html          # macOS
 ```
 
-Non ci sono dipendenze da installare né build da eseguire. L’unica libreria esterna è **Chart.js 4.4.1**, caricata da CDN per il grafico.
+Non ci sono dipendenze da installare né build da eseguire, e nessuna libreria esterna.
 
 ## Struttura del progetto
 
