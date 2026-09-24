@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.0 — 24/09/2026
+- Nuova prima tabella **«Scarto per l’80%»**: per ogni modello e ogni tipo di previsione, lo scarto più piccolo entro cui cade l’80% delle previsioni (temperatura ora per ora, massima e minima del giorno, vento medio ora per ora, vento massimo del giorno, pioggia del giorno, oraria e a 3 ore in mm). Più basso è meglio; percentuale impostabile (50–99%), ricordata dal browser.
+- La pioggia in mm è calcolata solo con le stazioni meteo e solo sui periodi in cui è piovuto o era prevista pioggia; con meno di 5 casi il valore non è mostrato.
+- Tabella ordinabile cliccando le intestazioni, migliore di ogni colonna in giallo; l’ordine generale usa le colonne in cui tutti i modelli hanno un valore.
+- Le schede 3/2/1 giorno prima, la località e la stazione sono ora in cima a questa tabella.
+
 ## v2.0.0 — 24/09/2026
 - **Tre schede: previsioni emesse 3, 2 o 1 giorno prima.** Per ogni modello si scaricano insieme le tre corse (una sola richiesta), così si passa da una scheda all’altra senza attese e si vede quanto i modelli migliorano avvicinandosi al giorno. La scheda scelta viene ricordata.
 - Titoli, spiegazioni e barra di stato seguono la scheda scelta. L’etichetta gialla di ItaliaMeteo ICON-2I compare solo a 3 giorni: a 2 e 1 giorno è confrontato alla pari.
