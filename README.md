@@ -11,7 +11,7 @@ Quale modello meteo prevede meglio nella tua città? Scegli una località italia
 1. Cerchi una località italiana (ricerca per nome, via geocoding Open-Meteo).
 2. La pagina individua l’**aeroporto con bollettino METAR più vicino** e ne scarica le misure reali.
 3. Per ogni ora del periodo scarica il valore che ciascun modello **aveva previsto 3 giorni prima** (non la previsione di oggi: l’archivio delle corse passate).
-4. Confronta previsto vs misurato e stila tre classifiche — temperatura, vento, pioggia — più un verdetto complessivo.
+4. Confronta previsto vs misurato e stila tre classifiche — temperatura, vento, pioggia — riunite in un’unica tabella ordinata.
 
 Il confronto è alla pari: le previsioni sono richieste sulle **coordinate dell’aeroporto**, non del centro città, così tutti i modelli vengono valutati sullo stesso punto in cui si misura.
 
@@ -19,17 +19,24 @@ Il confronto è alla pari: le previsioni sono richieste sulle **coordinate dell�
 
 | Grandezza | Come si misura l’errore |
 |---|---|
-| Temperatura | Errore medio (°C) e tendenza (se il modello prevede in media troppo caldo o troppo freddo) |
-| Vento | Errore medio (km/h) e tendenza |
+| Temperatura | Errore medio (°C), più errore minimo e massimo con il segno |
+| Vento | Errore medio (km/h), più errore minimo e massimo con il segno |
 | Pioggia | Indice sui giorni: presi ÷ (presi + falsi allarmi + mancati) |
 
-Il **vincitore** è il modello con la media dei piazzamenti migliore nelle tre classifiche.
+L’errore è calcolato come **previsto − misurato**, quindi minimo e massimo sono riportati **con il segno, non in valore assoluto**:
+
+- il **massimo** è il caso peggiore in eccesso (`+6,0 °C` = una volta ha previsto 6 gradi più del reale);
+- il **minimo** è il caso peggiore in difetto (`−4,5 °C` = 4 gradi e mezzo in meno).
+
+Un modello che sottostima sempre avrà anche il massimo negativo. I due estremi mostrano quanto può sbagliare nel singolo caso, che la sola media nasconde.
+
+I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e in ogni colonna il valore migliore è evidenziato. La pagina non proclama un vincitore: il confronto resta aperto alla lettura.
 
 **Esempio di indice pioggia:** in 30 giorni piove 4 volte; il modello prevede pioggia 5 volte e 3 sono giuste. Presi 3, falsi allarmi 2, mancati 1 → 3 ÷ (3+2+1) = **0,50**. Un modello che non prevede mai pioggia fa 0. Se nel periodo non piove mai e il modello non prevede mai pioggia, l’indice vale 1 (non ha sbagliato niente).
 
 ## Cosa mostra la pagina
 
-- **Riquadro del vincitore**, con avvisi automatici quando il risultato è poco solido (periodo troppo breve, oppure vincitore che gioca con un anticipo minore).
+- **Classifica dei modelli**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
 - **Tabella giorno per giorno**: valore misurato a confronto con quello previsto da ogni modello.
 - **Grafico ora per ora**, con selettore della grandezza: temperatura massima, temperatura minima, vento medio, vento massimo, pioggia.
 - **Periodo selezionabile**: ultimi 7, 14 o 30 giorni (default 30).
@@ -45,7 +52,7 @@ I modelli ad alta risoluzione che non arrivano a 3 giorni sono inclusi con il lo
 - **ItaliaMeteo ICON-2I**: previsione di 2 giorni prima
 - **DWD ICON-D2** (solo Nord Italia): previsione di 1 giorno prima
 
-Un anticipo minore rende la previsione più facile: se uno di questi vince, la pagina lo segnala esplicitamente.
+Un anticipo minore rende la previsione più facile: nel leggere la classifica va tenuto conto che questi modelli non giocano alla pari.
 
 Se un modello non copre la località scelta, viene escluso dal confronto e indicato nella barra di stato.
 

@@ -78,14 +78,9 @@ td.obs{font-weight:600;border-right:2px solid var(--axis)}
 .ok{color:var(--good);font-weight:600}
 .ko{color:var(--bad);font-weight:600}
 .hidden{display:none}
-.winner{margin-top:14px;padding:14px 16px;border-radius:10px;background:color-mix(in oklab, var(--accent) 9%, var(--surface));border:1px solid color-mix(in oklab, var(--accent) 30%, transparent)}
-.wlabel{font-size:12px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
-.wname{font-size:22px;font-weight:700;margin:2px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.wname .dot{width:14px;height:14px}
-.wcats{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:13px;color:var(--ink2)}
-.wcats b{color:var(--ink)}
 .tag{display:inline-block;font-size:11px;font-weight:600;line-height:1;padding:3px 6px;border-radius:999px;background:color-mix(in oklab, var(--s4) 22%, transparent);color:var(--ink);vertical-align:1px;white-space:nowrap}
 .wnote{font-size:12px;color:var(--ink2);margin-top:8px}
+td.rng{color:var(--ink2);font-variant-numeric:tabular-nums}
 details{font-size:13px;color:var(--ink2)}
 details summary{cursor:pointer;font-weight:600;color:var(--ink)}
 details li{margin:4px 0}
@@ -126,13 +121,13 @@ details li{margin:4px 0}
       <h2>Classifica dei modelli · previsioni emesse 3 giorni prima</h2>
       <p class="hint" style="margin:0">I modelli con l’etichetta gialla (<span class="tag">2 gg</span>, <span class="tag">1 gg</span>) non prevedono fino a 3 giorni: per loro si usa la previsione di 2 (o 1) giorni prima, che è più facile. Tienine conto nel confronto.</p>
       <div class="meta" id="meta"></div>
-      <div class="winner" id="winner"></div>
+      <div id="note"></div>
       <div class="tbl" style="margin-top:14px"><table id="rankTbl"></table></div>
       <details open style="margin-top:12px">
         <summary>Come leggere la tabella</summary>
         <ul>
           <li><b>Errore medio</b> (temperatura e vento): di quanto sbaglia in media ogni ora, in più o in meno. Più basso è meglio.</li>
-          <li><b>Tendenza</b>: l’errore medio con il segno, cioè da che parte sbaglia di solito. +1,5 °C = in media prevede 1,5 °C più caldo del reale; −3 km/h = prevede vento più debole. Vicino a 0 = nessuna tendenza.</li>
+          <li><b>Errore minimo e massimo</b>: i due casi peggiori nelle due direzioni, con il segno (non in valore assoluto). L’errore è <i>previsto − misurato</i>: il <b>massimo</b> è la volta che ha esagerato di più in eccesso (+6,0 °C = ha previsto 6 gradi in più del reale), il <b>minimo</b> la volta che ha sbagliato di più in difetto (−4,5 °C = 4 gradi e mezzo in meno). Insieme dicono quanto può sbagliare nel caso singolo, che l’errore medio da solo nasconde.</li>
           <li><b>Pioggia, indice</b> (da 0 a 1, più alto è meglio). Si guarda giorno per giorno: il modello “prevede pioggia” se per quel giorno dà almeno 0,5 mm, e all’aeroporto “è piovuto” se almeno un bollettino ha segnalato pioggia. Poi si contano:
             <ul>
               <li><span class="ok">presi</span>: pioggia prevista e caduta;</li>
@@ -430,7 +425,7 @@ function buildData(days,obs,fc){
       if(f.w[i]!=null && oW[i]!=null) ew.push(f.w[i]-oW[i]);
     });
     const stat=e=> e.length<Math.max(12,T.length*0.25) ? null :
-      {mae:e.reduce((s,x)=>s+Math.abs(x),0)/e.length, bias:e.reduce((s,x)=>s+x,0)/e.length, n:e.length};
+      {mae:e.reduce((s,x)=>s+Math.abs(x),0)/e.length, min:Math.min(...e), max:Math.max(...e), n:e.length};
     // rain, day by day: hit = rain forecast and fell; fa = false alarm; miss = rain not forecast; dry = dry forecast, dry day
     let hit=0, fa=0, miss=0, dry=0;
     days.forEach(d=>{ const o=od[d], p=fd[id][d]; if(!(o&&p&&p.psum!=null)) return;
@@ -470,29 +465,25 @@ function renderRank(){
   const bT=bestOf(fT,true), bW=bestOf(fW,true), bR=bestOf(fR,false);
   const cls=(v,b)=>v!=null&&b!=null&&Math.abs(v-b)<1e-9?' class="best"':'';
   let pos=0, prev=null;
-  let h=`<thead><tr><th class="l">#</th><th class="l">Modello</th><th>Temperatura<br>errore medio</th><th>Temperatura<br>tendenza</th><th>Vento<br>errore medio</th><th>Vento<br>tendenza</th><th>Pioggia<br>indice</th><th>Giorni di pioggia<br>presi · falsi allarmi · mancati</th><th>Pioggia<br>giorni azzeccati</th></tr></thead><tbody>`;
+  let h=`<thead><tr><th class="l">#</th><th class="l">Modello</th><th>Temperatura<br>errore medio</th><th>Temperatura<br>errore minimo</th><th>Temperatura<br>errore massimo</th><th>Vento<br>errore medio</th><th>Vento<br>errore minimo</th><th>Vento<br>errore massimo</th><th>Pioggia<br>indice</th><th>Giorni di pioggia<br>presi · falsi allarmi · mancati</th><th>Pioggia<br>giorni azzeccati</th></tr></thead><tbody>`;
   rows.forEach((r,i)=>{ const x=m(r.id);
     if(r.score!=null){ if(r.score!==prev) pos=i+1; prev=r.score; }
     h+=`<tr><td class="rank">${r.score!=null?pos:'<span class="na">–</span>'}</td>
       <td class="l"><span class="dot" style="background:${mcolor(r.id)}"></span> ${mname(r.id)}</td>
       <td${cls(fT(r.id),bT)}>${x.t?fmt(x.t.mae,2)+' °C':'<span class="na">n.d.</span>'}</td>
-      <td>${x.t?sgn(x.t.bias)+' °C':''}</td>
+      <td class="rng">${x.t?sgn(x.t.min)+' °C':''}</td>
+      <td class="rng">${x.t?sgn(x.t.max)+' °C':''}</td>
       <td${cls(fW(r.id),bW)}>${x.w?fmt(x.w.mae,2)+' km/h':'<span class="na">n.d.</span>'}</td>
-      <td>${x.w?sgn(x.w.bias)+' km/h':''}</td>
+      <td class="rng">${x.w?sgn(x.w.min)+' km/h':''}</td>
+      <td class="rng">${x.w?sgn(x.w.max)+' km/h':''}</td>
       <td${cls(fR(r.id),bR)}>${x.r?fmt(x.r.idx,2)+(x.r.noEvents?' <span class="na">(nessuna pioggia)</span>':''):'<span class="na">n.d.</span>'}</td>
       <td>${x.r?`<span class="ok">${x.r.hit}</span> · <span class="ko">${x.r.fa}</span> · <span class="ko">${x.r.miss}</span>`:''}</td>
       <td class="na">${x.r?`${x.r.ok} su ${x.r.nd}`:''}</td></tr>`;
   });
   $('rankTbl').innerHTML=h+'</tbody>';
-  // winner banner
-  const names=(f,b)=> b==null ? '—' : ids.filter(id=>{ const x=f(id); return x!=null && Math.abs(x-b)<1e-9; }).map(mlabel).join(', ');
-  const top=rows.filter(r=>r.score!=null && r.score===rows[0].score);
-  $('winner').innerHTML = !top.length ? `<span class="na">Nessun modello ha dati completi.</span>` :
-    `<div class="wlabel">Vincitore</div>
-     <div class="wname">${top.map(r=>`<span class="dot" style="background:${mcolor(r.id)}"></span> ${mname(r.id)}`).join(' &nbsp;·&nbsp; ')}${top.length>1?' <span class="na">(pari merito)</span>':''}</div>
-     <div class="wcats"><span>Migliore per temperatura: <b>${names(fT,bT)}</b></span><span>per vento: <b>${names(fW,bW)}</b></span><span>per pioggia: <b>${names(fR,bR)}</b></span></div>
-     ${top.some(r=>mlead(r.id)!==LEAD)?'<div class="wnote">Attenzione: il vincitore usa una previsione a meno di 3 giorni, più facile di quella degli altri modelli.</div>':''}
-     ${D.days.length<14?`<div class="wnote">Con soli ${D.days.length} giorni il risultato può cambiare molto da una settimana all’altra: per un verdetto più solido scegli 30 giorni.</div>`:''}`;
+  // note sulla solidita' del confronto
+  $('note').innerHTML = !rows.some(r=>r.score!=null) ? `<span class="na">Nessun modello ha dati completi.</span>` :
+    (D.days.length<14?`<div class="wnote">Con soli ${D.days.length} giorni la classifica può cambiare molto da una settimana all’altra: per un confronto più solido scegli 30 giorni.</div>`:'');
 }
 
 function renderDay(){
