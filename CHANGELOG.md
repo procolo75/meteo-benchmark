@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.0 — 24/09/2026
+- Tolto il limite di 8 modelli: ora si possono selezionare tutti, anche con i nuovi pulsanti **Tutti** e **Predefiniti**. Oltre l’ottavo, i colori si ripetono con linea tratteggiata e poi puntinata.
+- Aggiunti **Open-Meteo Best match** (attivo di default), ECMWF IFS 9 km, DWD ICON globale, Météo-France ARPEGE globale.
+- MeteoSwiss ICON-CH2 sostituito da MeteoSwiss ICON seamless; le etichette indicano ora quali modelli sono *seamless*.
+- KNMI, DMI e MET Norway seamless non inclusi: in Italia, a 3 giorni, coincidono con ECMWF IFS 9 km.
+- La tabella «Giorno per giorno» a sfondo colorato è sostituita da un grafico a corsie numeriche (come i Weather Charts di dradis): una riga per modello, i valori del giorno nel colore del modello, zeri in grigio. Interruttore **Previsto / Errore**; nomi e riepilogo del periodo restano fermi mentre i giorni scorrono.
+
 ## v1.1.0 — 24/09/2026
 - Rimosso il riquadro del vincitore: la pagina non proclama più un modello migliore, restano la classifica ordinata e l’evidenziazione del valore migliore in ogni colonna.
 - Rimosse le colonne «Temperatura tendenza» e «Vento tendenza».

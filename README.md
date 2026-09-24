@@ -37,15 +37,19 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 ## Cosa mostra la pagina
 
 - **Classifica dei modelli**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
-- **Tabella giorno per giorno**: valore misurato a confronto con quello previsto da ogni modello.
+- **Giorno per giorno**, a corsie numeriche: una riga per modello con il valore di ogni giorno stampato nel colore del modello, sotto la riga del misurato. Si può vedere il valore previsto o l’errore (previsto − misurato; per la pioggia ✓ presa, FA falso allarme, M mancata). Accanto al nome, l’errore medio o l’indice pioggia del periodo.
 - **Grafico ora per ora**, con selettore della grandezza: temperatura massima, temperatura minima, vento medio, vento massimo, pioggia.
 - **Periodo selezionabile**: ultimi 7, 14 o 30 giorni (default 30).
 
 ## Modelli
 
-Attivi di default: ECMWF IFS, ECMWF AIFS (IA), DWD ICON, ItaliaMeteo ICON-2I, NOAA GFS, Météo-France, UK Met Office, GEM Canada.
+Attivi di default: Open-Meteo Best match, ECMWF IFS 0,25°, ECMWF AIFS (IA), DWD ICON seamless, ItaliaMeteo ICON-2I, NOAA GFS seamless, Météo-France seamless, UK Met Office seamless, GEM Canada seamless.
 
-Attivabili dall’utente: NOAA AIGFS (IA), JMA Giappone, CMA Cina, MeteoSwiss ICON-CH2 (Nord Italia), DWD ICON-D2 (Nord Italia).
+Attivabili dall’utente: ECMWF IFS 9 km, DWD ICON globale, Météo-France ARPEGE globale, NOAA AIGFS (IA), JMA Giappone seamless, CMA Cina, MeteoSwiss ICON seamless (Nord Italia), DWD ICON-D2 (Nord Italia).
+
+Si possono attivare tutti insieme (pulsante **Tutti**; **Predefiniti** torna alla selezione iniziale). Oltre l’ottavo modello i colori si ripetono con linea tratteggiata e poi puntinata.
+
+Nota sui *seamless*: a 3 giorni di anticipo, in Italia, alcuni coincidono con un solo modello. **Best match** dà gli stessi valori di DWD ICON seamless (ICON-EU); KNMI, DMI e MET Norway seamless danno gli stessi valori di ECMWF IFS 9 km e per questo non sono in elenco.
 
 I modelli ad alta risoluzione che non arrivano a 3 giorni sono inclusi con il loro anticipo massimo e segnati con un’etichetta gialla:
 

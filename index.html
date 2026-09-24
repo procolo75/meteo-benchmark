@@ -13,7 +13,6 @@
   --accent:#2a78d6; --accent-ink:#ffffff;
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
   --obs:#0b0b0b;
-  --div-cold:#2a78d6; --div-warm:#e34948;
   --good:#006300; --bad:#d03b3b;
   --rainband:rgba(42,120,214,.12);
 }
@@ -25,7 +24,6 @@
     --accent:#3987e5;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
     --obs:#ffffff;
-    --div-cold:#3987e5; --div-warm:#e66767;
     --good:#0ca30c; --bad:#e66767;
     --rainband:rgba(57,135,229,.20);
   }
@@ -50,7 +48,12 @@ button:disabled{opacity:.5;cursor:default}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--axis);border-radius:999px;padding:4px 10px 4px 8px;font-size:13px;cursor:pointer;user-select:none}
 .chip input{margin:0}
 .chip.off{color:var(--muted)}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none;background:var(--c)}
+.dot.s1{background:transparent;border:2.5px solid var(--c)}
+.dot.s2{background:transparent;border:2.5px dotted var(--c)}
+.chipbar{display:flex;gap:8px;align-items:center;margin-top:14px;font-size:12px;color:var(--ink2);font-weight:600}
+.chipbar button{padding:3px 10px;font-size:12px}
+.chipbar + .chips{margin-top:8px}
 .status{font-size:13px;color:var(--ink2);margin-top:12px;min-height:1.4em}
 .status.err{color:var(--bad)}
 .seg{display:inline-flex;border:1px solid var(--axis);border-radius:8px;overflow:hidden}
@@ -65,15 +68,18 @@ th,td{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:right;whit
 th{font-size:12px;color:var(--ink2);font-weight:600;vertical-align:bottom}
 th:first-child,td:first-child,td.l,th.l{text-align:left}
 td{font-variant-numeric:tabular-nums}
-tr.foot td{font-weight:600;border-top:2px solid var(--axis);border-bottom:0}
-td.obs{font-weight:600;border-right:2px solid var(--axis)}
 .tbl{overflow-x:auto}
+.lanes{display:flex;min-width:0}
+.lanes-fix{flex:none}
+.lanes-scroll{flex:1;min-width:0;overflow-x:auto}
 .na{color:var(--muted)}
 .rank{font-weight:700;width:28px}
 .best{font-weight:700}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink2);margin:4px 0 12px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
-.legend .ln{width:16px;height:3px;border-radius:2px;display:inline-block}
+.legend .ln{width:18px;height:0;border-top:3px solid var(--c,var(--obs));display:inline-block}
+.legend .ln.s1{border-top-style:dashed}
+.legend .ln.s2{border-top-style:dotted}
 .chartbox{position:relative;height:340px}
 .ok{color:var(--good);font-weight:600}
 .ko{color:var(--bad);font-weight:600}
@@ -112,6 +118,10 @@ details li{margin:4px 0}
       </div>
       <button class="primary" id="runBtn" type="button" disabled>Confronta</button>
     </div>
+    <div class="chipbar"><span>Modelli</span>
+      <button type="button" id="allBtn">Tutti</button>
+      <button type="button" id="defBtn">Predefiniti</button>
+    </div>
     <div class="chips" id="chips"></div>
     <div class="status" id="status"></div>
   </div>
@@ -148,6 +158,8 @@ details li{margin:4px 0}
           <h2>Giorno per giorno</h2>
           <p class="hint" style="margin:0">Per ogni giorno: il valore misurato e quello che ogni modello prevedeva 3 giorni prima (meno per i modelli con l’etichetta gialla).</p>
         </div>
+        <div class="row">
+        <div class="f"><span>Mostra</span><div class="seg" id="dayModeSeg"></div></div>
         <div class="f"><span>Grandezza</span>
           <select id="dayVar">
             <option value="tmax">Temperatura massima</option>
@@ -157,8 +169,9 @@ details li{margin:4px 0}
             <option value="rain">Pioggia</option>
           </select>
         </div>
+        </div>
       </div>
-      <div class="tbl" style="margin-top:14px"><table id="dayTbl"></table></div>
+      <div class="lanes" id="dayLanes" style="margin-top:14px"></div>
       <p class="hint" id="dayHint" style="margin-top:10px"></p>
     </div>
 
@@ -196,22 +209,28 @@ details li{margin:4px 0}
 <script>
 // ---------- Configuration ----------
 const LEAD = 3;   // days between forecast issue and verified day (models with a shorter range use their own `lead`)
+// At 3 days in Italy several "seamless" mixes collapse onto one component (checked 09/2026):
+// best_match = ICON seamless = ICON-EU; KNMI, DMI and MET Norway seamless = ECMWF IFS 9 km; so those three are left out.
 const MODELS = [
-  {id:'ecmwf_ifs025',          label:'ECMWF IFS',              def:true},
+  {id:'best_match',            label:'Open-Meteo Best match',  def:true},
+  {id:'ecmwf_ifs025',          label:'ECMWF IFS 0,25°',        def:true},
+  {id:'ecmwf_ifs',             label:'ECMWF IFS 9 km',         def:false},
   {id:'ecmwf_aifs025_single',  label:'ECMWF AIFS (IA)',        def:true},
-  {id:'icon_seamless',         label:'DWD ICON',               def:true},
+  {id:'icon_seamless',         label:'DWD ICON seamless',      def:true},
+  {id:'icon_global',           label:'DWD ICON globale',       def:false},
   {id:'italia_meteo_arpae_icon_2i', label:'ItaliaMeteo ICON-2I', def:true, lead:2},
-  {id:'gfs_seamless',          label:'NOAA GFS',               def:true},
-  {id:'meteofrance_seamless',  label:'Météo-France',           def:true},
-  {id:'ukmo_seamless',         label:'UK Met Office',          def:true},
-  {id:'gem_seamless',          label:'GEM Canada',             def:true},
+  {id:'gfs_seamless',          label:'NOAA GFS seamless',      def:true},
+  {id:'meteofrance_seamless',  label:'Météo-France seamless',  def:true},
+  {id:'meteofrance_arpege_world', label:'Météo-France ARPEGE globale', def:false},
+  {id:'ukmo_seamless',         label:'UK Met Office seamless', def:true},
+  {id:'gem_seamless',          label:'GEM Canada seamless',    def:true},
   {id:'ncep_aigfs025',         label:'NOAA AIGFS (IA)',        def:false},
-  {id:'jma_seamless',          label:'JMA Giappone',           def:false},
+  {id:'jma_seamless',          label:'JMA Giappone seamless',  def:false},
   {id:'cma_grapes_global',     label:'CMA Cina',               def:false},
-  {id:'meteoswiss_icon_ch2',   label:'MeteoSwiss ICON-CH2 (Nord)', def:false},
+  {id:'meteoswiss_icon_seamless', label:'MeteoSwiss ICON seamless (Nord)', def:false},
   {id:'icon_d2',               label:'DWD ICON-D2 (Nord)',     def:false, lead:1},
 ];
-const MAX_ACTIVE = 8;
+const NCOL = 8;   // palette size: beyond it colours repeat with a dashed, then dotted line
 const KT2KMH = 1.852;
 const RAIN_H = 0.1, RAIN_D = 0.5;
 const HOUR = 3600e3;
@@ -222,7 +241,7 @@ const STATIONS = [["LIBA","Amendola",41.5381,15.7139,60],["LIBC","Crotone",38.99
 const st = {
   stations:STATIONS, place:null, stationList:[], station:null,
   active:new Set(MODELS.filter(m=>m.def).map(m=>m.id)),
-  slot:{}, data:null, tsVar:'t', chart:null
+  slot:{}, data:null, tsVar:'t', dayMode:'val', chart:null
 };
 
 // ---------- Helpers ----------
@@ -232,7 +251,11 @@ const mdef = id => MODELS.find(m=>m.id===id);
 const mlead = id => mdef(id).lead || LEAD;
 const mlabel = id => mdef(id).label + (mlead(id)!==LEAD ? ` (${mlead(id)} gg)` : '');
 const mname = id => mdef(id).label + (mlead(id)!==LEAD ? ` <span class="tag">${mlead(id)} gg</span>` : '');
-const mcolor = id => css('--s'+(st.slot[id]+1));
+const mcolor = id => css('--s'+(st.slot[id]%NCOL+1));
+const mstyle = id => Math.floor(st.slot[id]/NCOL);   // 0 solid, 1 dashed, 2 dotted
+const mdash = id => [[],[6,4],[2,3]][mstyle(id)] || [];
+const mdot = id => `<span class="dot${mstyle(id)?' s'+mstyle(id):''}" style="--c:${mcolor(id)}"></span>`;
+const mline = id => `<i class="ln${mstyle(id)?' s'+mstyle(id):''}" style="--c:${mcolor(id)}"></i>`;
 const fmt = (v,d=1) => v==null||isNaN(v) ? '—' : v.toFixed(d).replace('.',',');
 const sgn = (v,d=1) => { if(v==null||isNaN(v)) return '—'; const r=+v.toFixed(d); return (r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(d).replace('.',','); };
 const pad = n => String(n).padStart(2,'0');
@@ -245,7 +268,7 @@ function dayLabel(d){ return new Date(d+'T12:00:00Z').toLocaleDateString('it-IT'
 function assignSlot(id){
   if(st.slot[id]!=null) return;
   const used=new Set(Object.values(st.slot));
-  for(let i=0;i<MAX_ACTIVE;i++) if(!used.has(i)){ st.slot[id]=i; return; }
+  let i=0; while(used.has(i)) i++; st.slot[id]=i;
 }
 MODELS.forEach(m=>{ if(m.def) assignSlot(m.id); });
 try{ const c=localStorage.getItem('mb_city'); if(c) $('city').value=c; }catch(e){}
@@ -259,16 +282,19 @@ function renderChips(){
     const lab=document.createElement('label');
     lab.className='chip'+(on?'':' off');
     lab.title = failed ? 'Nessun dato per questo punto: '+st.data.fc[m.id].err : '';
-    lab.innerHTML=`<input type="checkbox" ${on?'checked':''}> ${on?`<span class="dot" style="background:${mcolor(m.id)}"></span>`:''}${mname(m.id)}${failed?' <span class="na">(n.d.)</span>':''}`;
+    lab.innerHTML=`<input type="checkbox" ${on?'checked':''}> ${on?mdot(m.id):''}${mname(m.id)}${failed?' <span class="na">(n.d.)</span>':''}`;
     lab.querySelector('input').addEventListener('change',e=>{
-      if(e.target.checked){
-        if(st.active.size>=MAX_ACTIVE){ e.target.checked=false; setStatus(`Massimo ${MAX_ACTIVE} modelli insieme: togline uno per aggiungerne un altro.`,true); return; }
-        st.active.add(m.id); assignSlot(m.id);
-      } else { st.active.delete(m.id); delete st.slot[m.id]; }
+      if(e.target.checked){ st.active.add(m.id); assignSlot(m.id); }
+      else { st.active.delete(m.id); delete st.slot[m.id]; }
       renderChips(); if(st.data) renderAll();
     });
     box.appendChild(lab);
   });
+}
+function selectModels(ids){
+  st.active=new Set(ids); st.slot={};
+  MODELS.forEach(m=>{ if(st.active.has(m.id)) assignSlot(m.id); });
+  renderChips(); if(st.data) renderAll();
 }
 renderChips();
 
@@ -439,7 +465,7 @@ function buildData(days,obs,fc){
 }
 
 // ---------- Rendering ----------
-function renderAll(){ renderMeta(); renderRank(); renderDay(); renderVarSeg(); renderTS(); }
+function renderAll(){ renderMeta(); renderRank(); renderDayMode(); renderDay(); renderVarSeg(); renderTS(); }
 function activeOk(){ return MODELS.filter(m=>st.active.has(m.id) && st.data.fc[m.id].ok).map(m=>m.id); }
 
 function renderMeta(){
@@ -469,7 +495,7 @@ function renderRank(){
   rows.forEach((r,i)=>{ const x=m(r.id);
     if(r.score!=null){ if(r.score!==prev) pos=i+1; prev=r.score; }
     h+=`<tr><td class="rank">${r.score!=null?pos:'<span class="na">–</span>'}</td>
-      <td class="l"><span class="dot" style="background:${mcolor(r.id)}"></span> ${mname(r.id)}</td>
+      <td class="l">${mdot(r.id)} ${mname(r.id)}</td>
       <td${cls(fT(r.id),bT)}>${x.t?fmt(x.t.mae,2)+' °C':'<span class="na">n.d.</span>'}</td>
       <td class="rng">${x.t?sgn(x.t.min)+' °C':''}</td>
       <td class="rng">${x.t?sgn(x.t.max)+' °C':''}</td>
@@ -486,42 +512,94 @@ function renderRank(){
     (D.days.length<14?`<div class="wnote">Con soli ${D.days.length} giorni la classifica può cambiare molto da una settimana all’altra: per un confronto più solido scegli 30 giorni.</div>`:'');
 }
 
+// Numeric lanes, as in dradis' weather charts: one row per model, the day's value printed
+// in the model's colour instead of a colour-graded table. Zeros are dimmed so the few real
+// values stand out; the last column carries the period summary.
 function renderDay(){
-  const D=st.data, v=$('dayVar').value, ids=activeOk();
-  const isT=v==='tmax'||v==='tmin', unit=isT?' °C':' km/h', span=isT?4:12;
-  const cold=css('--div-cold'), warm=css('--div-warm');
-  const bg=err=>{ if(err==null) return ''; const k=Math.min(1,Math.abs(err)/span)*55; return `background:color-mix(in oklab, ${err<0?cold:warm} ${k.toFixed(0)}%, transparent)`; };
-  let h=`<thead><tr><th class="l">Giorno</th><th>Misurato</th>${ids.map(id=>`<th><span class="dot" style="background:${mcolor(id)}"></span> ${mname(id)}</th>`).join('')}</tr></thead><tbody>`;
-  const agg={}; ids.forEach(id=>agg[id]={s:0,n:0});
-  D.days.forEach(d=>{
-    const o=D.od[d];
-    const ov = !o ? '<span class="na">n.d.</span>' : v==='rain' ? (o.rain?`sì (${o.rainH} ${o.rainH===1?'ora':'ore'})`:'no') : fmt(o[v])+unit;
-    h+=`<tr><td class="l">${dayLabel(d)}</td><td class="obs">${ov}</td>`;
-    ids.forEach(id=>{ const p=D.fd[id][d];
-      if(!p){ h+='<td class="na">n.d.</td>'; return; }
-      if(v==='rain'){
-        if(p.psum==null){ h+='<td class="na">n.d.</td>'; return; }
-        const txt=`${fmt(p.psum)} mm`;
-        if(!o){ h+=`<td>${txt}</td>`; return; }
-        const F=p.psum>=RAIN_D;
-        const [cl,lab,k] = F&&o.rain ? ['ok','✓ presa','hit'] : F ? ['ko','✗ falso allarme','fa'] : o.rain ? ['ko','✗ mancata','miss'] : ['na','','dry'];
-        agg[id][k]=(agg[id][k]||0)+1;
-        h+= k==='dry' ? `<td class="na">${txt}</td>` : `<td><span class="${cl}">${lab}</span> ${txt}</td>`; return;
-      }
-      const val=p[v], err=(o&&o[v]!=null&&val!=null)?val-o[v]:null;
-      if(err!=null){ agg[id].s+=Math.abs(err); agg[id].n++; }
-      h+=`<td style="${bg(err)}">${fmt(val)}${err!=null?` <span class="na">(${sgn(err)})</span>`:''}</td>`;
-    });
-    h+='</tr>';
+  const D=st.data, v=$('dayVar').value, ids=activeOk(), mode=st.dayMode, isR=v==='rain';
+  const isT=v==='tmax'||v==='tmin', unit=isR?' mm':isT?' °C':' km/h', dec=isT||isR?1:0;
+  const ink=css('--ink'), ink2=css('--ink2'), muted=css('--muted'), grid=css('--grid'), axis=css('--axis'), good=css('--good'), bad=css('--bad');
+  const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  // Two SVGs side by side: names and period summary stay put, the days scroll horizontally.
+  const avail=$('dayLanes').clientWidth||1100;
+  const n=D.days.length, SW=72, RH=26, HH=38;
+  const LW=Math.min(Math.max(150, ...ids.map(id=>mlabel(id).length*7+30)), Math.max(110, Math.floor(avail*0.45)-SW));
+  const short=t=>t.length*7+30<=LW ? t : t.slice(0,Math.max(4,Math.floor((LW-30)/7)-1))+'…';
+  const CW=Math.max(isR&&mode==='err'?30:40, Math.floor((avail-LW-SW)/n));
+  const W=n*CW, H=HH+(ids.length+1)*RH+8;
+  const X=i=>i*CW+CW/2, Y=r=>HH+r*RH+RH/2, SX=LW+SW/2;
+  let g='', gl='';
+  // day header, week start and lane separators
+  D.days.forEach((d,i)=>{
+    const dt=new Date(d+'T12:00:00Z'), mon=dt.getUTCDay()===1;
+    g+=`<text x="${X(i)}" y="14" fill="${muted}" font-size="10" text-anchor="middle">${dt.toLocaleDateString('it-IT',{weekday:'short',timeZone:'UTC'}).slice(0,3)}</text>`+
+       `<text x="${X(i)}" y="29" fill="${ink2}" font-size="11" font-weight="600" text-anchor="middle">${dt.getUTCDate()}/${dt.getUTCMonth()+1}</text>`;
+    if(i) g+=`<line x1="${i*CW}" x2="${i*CW}" y1="${HH-4}" y2="${H-8}" stroke="${mon?axis:grid}" stroke-width="${mon?1.2:0.6}"/>`;
   });
-  const rainFoot=a=>{ const hit=a.hit||0, fa=a.fa||0, miss=a.miss||0, ev=hit+fa+miss;
-    return `${fmt(ev?hit/ev:1,2)} <span class="na">= ${hit} ÷ (${hit}+${fa}+${miss})</span>`; };
-  h+=`<tr class="foot"><td class="l">${v==='rain'?'Indice pioggia':'Errore medio'}</td><td></td>`+
-    ids.map(id=>{ const a=agg[id]; return `<td>${v==='rain'?rainFoot(a):!a.n?'—':fmt(a.s/a.n)+unit}</td>`; }).join('')+'</tr>';
-  $('dayTbl').innerHTML=h+'</tbody>';
-  $('dayHint').textContent = v==='rain'
-    ? `Millimetri previsti per il giorno, 3 giorni prima (meno per i modelli con l’etichetta gialla). Il modello “prevede pioggia” se ≥ ${fmt(RAIN_D)} mm. ✓ presa = pioggia prevista e caduta; ✗ falso allarme = prevista ma non caduta; ✗ mancata = caduta ma non prevista; in grigio i giorni asciutti previsti asciutti, che l’indice non conta.`
-    : `Tra parentesi l’errore rispetto al misurato. Sfondo azzurro = previsto più ${isT?'freddo':'debole'}, rosso = più ${isT?'caldo':'forte'}; più intenso = errore maggiore.`;
+  for(let r=0;r<=ids.length+1;r++){ const hl=`y1="${HH+r*RH}" y2="${HH+r*RH}" stroke="${r===1?axis:grid}" stroke-width="${r===1?1.2:0.6}"`;
+    g+=`<line x1="0" x2="${W}" ${hl}/>`; gl+=`<line x1="0" x2="${LW+SW}" ${hl}/>`; }
+  gl+=`<line x1="${LW+SW-0.6}" x2="${LW+SW-0.6}" y1="${HH-4}" y2="${H-8}" stroke="${axis}" stroke-width="1.2"/>`;
+  gl+=`<text x="${SX}" y="29" fill="${ink2}" font-size="11" font-weight="600" text-anchor="middle">${isR?'indice':'err. medio'}</text>`;
+  const cell=(i,r,txt,fill,tip,bold)=>`<text x="${X(i)}" y="${Y(r)}" fill="${fill}" font-size="12"${bold?' font-weight="700"':''} text-anchor="middle" dominant-baseline="central"><title>${esc(tip)}</title>${esc(txt)}</text>`;
+  const label=(r,html)=>gl+=html+`<text x="${r===0?8:24}" y="${Y(r)}" fill="${r===0?ink:ink2}" font-size="12"${r===0?' font-weight="700"':''} dominant-baseline="central"><title>${esc(r===0?'Misurato':mlabel(ids[r-1]))}</title>${esc(r===0?'Misurato':short(mlabel(ids[r-1])))}</text>`;
+  // observed lane
+  label(0,'');
+  D.days.forEach((d,i)=>{ const o=D.od[d];
+    if(!o){ g+=cell(i,0,'–',muted,`${dayLabel(d)}: nessuna misura`); return; }
+    if(isR) g+=cell(i,0,o.rain?'sì':'no',o.rain?ink:muted,`${dayLabel(d)}: ${o.rain?`pioggia (${o.rainH} ${o.rainH===1?'ora':'ore'})`:'niente pioggia'}`,o.rain);
+    else g+=cell(i,0,fmt(o[v],dec),ink,`${dayLabel(d)} · misurato: ${fmt(o[v])}${unit}`,true);
+  });
+  // model lanes
+  ids.forEach((id,k)=>{ const r=k+1, c=mcolor(id), agg={s:0,n:0,hit:0,fa:0,miss:0};
+    const sty=mstyle(id);
+    label(r,`<circle cx="12" cy="${Y(r)}" r="${sty?3.8:5}" fill="${sty?'none':c}" stroke="${c}" stroke-width="${sty?2.4:0}"${sty===2?' stroke-dasharray="1.6 1.6"':''}/>`);
+    D.days.forEach((d,i)=>{ const p=D.fd[id][d], o=D.od[d], tip0=`${mlabel(id)} · ${dayLabel(d)}`;
+      if(!p || (isR&&p.psum==null) || (!isR&&p[v]==null)){ g+=cell(i,r,'–',muted,tip0+': n.d.'); return; }
+      if(isR){
+        const F=p.psum>=RAIN_D, k2 = !o ? null : F&&o.rain?'hit':F?'fa':o.rain?'miss':'dry';
+        if(k2 && k2!=='dry') agg[k2]++;
+        const outcome={hit:'presa',fa:'falso allarme',miss:'mancata',dry:'asciutto previsto asciutto'}[k2]||'';
+        const tip=`${tip0}: ${fmt(p.psum)} mm${outcome?' · '+outcome:''}`;
+        if(mode==='err'){
+          const [t,f]= {hit:['✓',good],fa:['FA',bad],miss:['M',bad],dry:['·',muted]}[k2]||['–',muted];
+          g+=cell(i,r,t,f,tip,k2==='hit'); return;
+        }
+        const z=Math.round(p.psum*10)===0;
+        g+=cell(i,r,z?'0':fmt(p.psum),z?muted:c,tip,F); return;
+      }
+      const val=p[v], err=(o&&o[v]!=null)?val-o[v]:null;
+      if(err!=null){ agg.s+=Math.abs(err); agg.n++; }
+      const tip=`${tip0}: ${fmt(val)}${unit}${err!=null?` (errore ${sgn(err)}${unit})`:''}`;
+      if(mode==='err'){
+        if(err==null){ g+=cell(i,r,'–',muted,tip); return; }
+        const z=+err.toFixed(dec)===0;
+        g+=cell(i,r,z?'0':sgn(err,dec),z?muted:c,tip); return;
+      }
+      g+=cell(i,r,fmt(val,dec),c,tip);
+    });
+    const ev=agg.hit+agg.fa+agg.miss;
+    const sum = isR ? fmt(ev?agg.hit/ev:1,2) : agg.n ? fmt(agg.s/agg.n,1) : '—';
+    const sumTip = isR ? `${mlabel(id)} · indice pioggia = ${agg.hit} ÷ (${agg.hit}+${agg.fa}+${agg.miss})` : `${mlabel(id)} · errore medio giornaliero`;
+    gl+=`<text x="${SX}" y="${Y(r)}" fill="${c}" font-size="12" font-weight="700" text-anchor="middle" dominant-baseline="central"><title>${esc(sumTip)}</title>${sum}</text>`;
+  });
+  const svg=(w,body,lab)=>`<svg width="${w}" height="${H}" viewBox="0 0 ${w} ${H}" role="img" aria-label="${lab}" style="display:block;font-family:inherit;font-variant-numeric:tabular-nums">${body}</svg>`;
+  $('dayLanes').innerHTML=`<div class="lanes-fix">${svg(LW+SW,gl,'Modelli e riepilogo del periodo')}</div><div class="lanes-scroll">${svg(W,g,'Valori giorno per giorno')}</div>`;
+  const what = isR ? 'mm di pioggia previsti per il giorno' : v==='tmax'?'temperatura massima in °C':v==='tmin'?'temperatura minima in °C':v==='wmean'?'vento medio in km/h':'vento massimo in km/h';
+  $('dayHint').textContent = isR
+    ? (mode==='err'
+      ? `✓ = pioggia prevista (≥ ${fmt(RAIN_D)} mm) e caduta; FA = falso allarme, prevista ma non caduta; M = mancata, caduta ma non prevista; · = asciutto previsto asciutto, che l’indice non conta. Accanto al nome l’indice pioggia del periodo.`
+      : `Millimetri previsti per il giorno; in grassetto quando il modello “prevede pioggia” (≥ ${fmt(RAIN_D)} mm). In alto se all’aeroporto è piovuto. Accanto al nome l’indice pioggia del periodo.`)
+    : (mode==='err'
+      ? `Errore sul valore del giorno (${what}), previsto − misurato: positivo = previsto più ${isT?'caldo':'forte'}, negativo = più ${isT?'freddo':'debole'}. Accanto al nome la media degli errori in valore assoluto.`
+      : `Valori del giorno (${what}): in alto il misurato, sotto quanto previsto da ogni modello. Accanto al nome la media degli errori in valore assoluto. Passa sopra un numero per i dettagli.`);
+}
+
+function renderDayMode(){
+  const seg=$('dayModeSeg'); seg.innerHTML='';
+  [['val','Previsto'],['err','Errore']].forEach(([k,l])=>{
+    const b=document.createElement('button'); b.type='button'; b.textContent=l; b.className=st.dayMode===k?'on':'';
+    b.addEventListener('click',()=>{ st.dayMode=k; renderDayMode(); renderDay(); });
+    seg.appendChild(b); });
 }
 
 function renderVarSeg(){
@@ -533,8 +611,8 @@ function renderVarSeg(){
 }
 
 function legendHTML(withObs){
-  return (withObs?`<span><i class="ln" style="background:var(--obs)"></i>Misurato</span>`:'')+
-    activeOk().map(id=>`<span><i class="ln" style="background:${mcolor(id)}"></i>${mname(id)}</span>`).join('');
+  return (withObs?`<span><i class="ln"></i>Misurato</span>`:'')+
+    activeOk().map(id=>`<span>${mline(id)}${mname(id)}</span>`).join('');
 }
 
 const rainBands={ id:'rainBands', beforeDatasetsDraw(ch,_,opts){
@@ -550,7 +628,7 @@ function renderTS(){
   const datasets=[];
   if(v!=='r') datasets.push({label:'Misurato',data:v==='t'?D.oT:D.oW.map(x=>x==null?null:Math.round(x*10)/10),borderColor:css('--obs'),backgroundColor:css('--obs'),borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:true,order:0});
   ids.forEach(id=>{ const f=D.fc[id];
-    datasets.push({label:mlabel(id),data:v==='t'?f.t:v==='w'?f.w:f.p,borderColor:mcolor(id),backgroundColor:mcolor(id),borderWidth:1.6,pointRadius:0,pointHoverRadius:4,spanGaps:false,order:1}); });
+    datasets.push({label:mlabel(id),data:v==='t'?f.t:v==='w'?f.w:f.p,borderColor:mcolor(id),backgroundColor:mcolor(id),borderDash:mdash(id),borderWidth:1.6,pointRadius:0,pointHoverRadius:4,spanGaps:false,order:1}); });
   const unit=v==='t'?' °C':v==='w'?' km/h':' mm';
   const days=D.days.length;
   const opts={
@@ -572,7 +650,7 @@ function renderTS(){
     ? 'Fasce azzurre = ore in cui all’aeroporto pioveva. Linee = millimetri all’ora previsti 3 giorni prima (meno per i modelli con l’etichetta gialla).'
     : 'Linea spessa = misurato. Linee colorate = previsioni emesse 3 giorni prima (meno per i modelli con l’etichetta gialla).';
   $('legend2').innerHTML = v==='r'
-    ? `<span><i class="ln" style="background:var(--rainband);height:12px;width:12px"></i>Pioggia misurata</span>`+legendHTML(false)
+    ? `<span><i class="ln" style="background:var(--rainband);border:0;height:12px;width:12px"></i>Pioggia misurata</span>`+legendHTML(false)
     : legendHTML(true);
   if(st.chart) st.chart.destroy();
   st.chart=new Chart($('cTS'),{type:'line',data:{labels,datasets},options:opts,plugins:[rainBands]});
@@ -584,7 +662,10 @@ window.addEventListener('unhandledrejection',e=>setStatus('Errore: '+(e.reason&&
 $('searchBtn').addEventListener('click',search);
 $('city').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
 $('runBtn').addEventListener('click',run);
+$('allBtn').addEventListener('click',()=>selectModels(MODELS.map(m=>m.id)));
+$('defBtn').addEventListener('click',()=>selectModels(MODELS.filter(m=>m.def).map(m=>m.id)));
 $('dayVar').addEventListener('change',()=>{ if(st.data) renderDay(); });
+let resizeT; window.addEventListener('resize',()=>{ clearTimeout(resizeT); resizeT=setTimeout(()=>{ if(st.data) renderDay(); },150); });
 try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ renderChips(); if(st.data) renderAll(); }); }catch(e){}
 if(typeof Chart==='undefined') setStatus('Libreria dei grafici non caricata: serve la connessione internet.',true);
 </script>
