@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meteo Benchmark</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --accent:#2a78d6; --accent-ink:#ffffff;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --obs:#0b0b0b;
+  --div-cold:#2a78d6; --div-warm:#e34948;
+  --good:#006300; --bad:#d03b3b;
+  --rainband:rgba(42,120,214,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+    --accent:#3987e5;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --obs:#ffffff;
+    --div-cold:#3987e5; --div-warm:#e66767;
+    --good:#0ca30c; --bad:#e66767;
+    --rainband:rgba(57,135,229,.20);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:17px;margin:0 0 4px}
+.sub{color:var(--ink2);margin:0 0 20px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:12px;padding:18px;margin-bottom:16px}
+.hint{color:var(--ink2);font-size:13px;margin:0 0 12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2);font-weight:600}
+input,select,button{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:7px 10px}
+input[type=text]{width:200px}
+select{max-width:340px}
+button{cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--axis);border-radius:999px;padding:4px 10px 4px 8px;font-size:13px;cursor:pointer;user-select:none}
+.chip input{margin:0}
+.chip.off{color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.status{font-size:13px;color:var(--ink2);margin-top:12px;min-height:1.4em}
+.status.err{color:var(--bad)}
+.seg{display:inline-flex;border:1px solid var(--axis);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 12px;border-right:1px solid var(--axis)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13px;color:var(--ink2);margin:6px 0 0}
+.meta b{color:var(--ink)}
+.warn{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+th{font-size:12px;color:var(--ink2);font-weight:600;vertical-align:bottom}
+th:first-child,td:first-child,td.l,th.l{text-align:left}
+td{font-variant-numeric:tabular-nums}
+tr.foot td{font-weight:600;border-top:2px solid var(--axis);border-bottom:0}
+td.obs{font-weight:600;border-right:2px solid var(--axis)}
+.tbl{overflow-x:auto}
+.na{color:var(--muted)}
+.rank{font-weight:700;width:28px}
+.best{font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink2);margin:4px 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .ln{width:16px;height:3px;border-radius:2px;display:inline-block}
+.chartbox{position:relative;height:340px}
+.ok{color:var(--good);font-weight:600}
+.ko{color:var(--bad);font-weight:600}
+.hidden{display:none}
+.winner{margin-top:14px;padding:14px 16px;border-radius:10px;background:color-mix(in oklab, var(--accent) 9%, var(--surface));border:1px solid color-mix(in oklab, var(--accent) 30%, transparent)}
+.wlabel{font-size:12px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+.wname{font-size:22px;font-weight:700;margin:2px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wname .dot{width:14px;height:14px}
+.wcats{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:13px;color:var(--ink2)}
+.wcats b{color:var(--ink)}
+.tag{display:inline-block;font-size:11px;font-weight:600;line-height:1;padding:3px 6px;border-radius:999px;background:color-mix(in oklab, var(--s4) 22%, transparent);color:var(--ink);vertical-align:1px;white-space:nowrap}
+.wnote{font-size:12px;color:var(--ink2);margin-top:8px}
+details{font-size:13px;color:var(--ink2)}
+details summary{cursor:pointer;font-weight:600;color:var(--ink)}
+details li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Meteo Benchmark</h1>
+  <p class="sub">Quale modello meteo ha previsto meglio? Per ogni giorno del periodo scelto, la previsione emessa <b>3 giorni prima</b> (2 giorni per i modelli che non arrivano più lontano) viene confrontata ora per ora con i dati misurati in aeroporto.</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="f"><span>Città</span>
+        <input type="text" id="city" placeholder="es. Bologna" autocomplete="off">
+      </div>
+      <button id="searchBtn" type="button">Cerca</button>
+      <div class="f"><span>Località trovata</span>
+        <select id="place" disabled><option>—</option></select>
+      </div>
+      <div class="f"><span>Stazione di misura (aeroporto)</span>
+        <select id="station" disabled><option>—</option></select>
+      </div>
+      <div class="f"><span>Periodo</span>
+        <select id="period">
+          <option value="7">Ultimi 7 giorni</option>
+          <option value="14">Ultimi 14 giorni</option>
+          <option value="30" selected>Ultimi 30 giorni</option>
+        </select>
+      </div>
+      <button class="primary" id="runBtn" type="button" disabled>Confronta</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="card">
+      <h2>Classifica dei modelli · previsioni emesse 3 giorni prima</h2>
+      <p class="hint" style="margin:0">I modelli con l’etichetta gialla (<span class="tag">2 gg</span>, <span class="tag">1 gg</span>) non prevedono fino a 3 giorni: per loro si usa la previsione di 2 (o 1) giorni prima, che è più facile. Tienine conto nel confronto.</p>
+      <div class="meta" id="meta"></div>
+      <div class="winner" id="winner"></div>
+      <div class="tbl" style="margin-top:14px"><table id="rankTbl"></table></div>
+      <details open style="margin-top:12px">
+        <summary>Come leggere la tabella</summary>
+        <ul>
+          <li><b>Errore medio</b> (temperatura e vento): di quanto sbaglia in media ogni ora, in più o in meno. Più basso è meglio.</li>
+          <li><b>Tendenza</b>: l’errore medio con il segno, cioè da che parte sbaglia di solito. +1,5 °C = in media prevede 1,5 °C più caldo del reale; −3 km/h = prevede vento più debole. Vicino a 0 = nessuna tendenza.</li>
+          <li><b>Pioggia, indice</b> (da 0 a 1, più alto è meglio). Si guarda giorno per giorno: il modello “prevede pioggia” se per quel giorno dà almeno 0,5 mm, e all’aeroporto “è piovuto” se almeno un bollettino ha segnalato pioggia. Poi si contano:
+            <ul>
+              <li><span class="ok">presi</span>: pioggia prevista e caduta;</li>
+              <li><span class="ko">falsi allarmi</span>: pioggia prevista ma non caduta;</li>
+              <li><span class="ko">mancati</span>: pioggia caduta ma non prevista.</li>
+            </ul>
+            <b>Indice = presi ÷ (presi + falsi allarmi + mancati).</b> I giorni asciutti previsti asciutti non contano, perché sono facili: altrimenti un modello che dice sempre “non piove” sembrerebbe bravissimo in un mese secco.<br>
+            Esempio: in 30 giorni piove 4 volte; il modello prevede pioggia 5 volte e 3 sono giuste. Presi 3, falsi allarmi 2, mancati 1 → 3 ÷ (3+2+1) = <b>0,50</b>. Un modello che non prevede mai pioggia fa 0. Se nel periodo non piove mai e il modello non prevede mai pioggia, l’indice vale 1 (non ha sbagliato niente).</li>
+          <li><b>Giorni azzeccati</b> (in grigio, solo informativo): giorni in cui ha indovinato “piove / non piove”, contando anche quelli asciutti.</li>
+          <li><b>Posizione</b>: media dei piazzamenti nelle classifiche di temperatura, vento e pioggia (indice). Con pochi giorni di pioggia nel periodo, la parte pioggia è meno affidabile: meglio usare 30 giorni.</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2>Giorno per giorno</h2>
+          <p class="hint" style="margin:0">Per ogni giorno: il valore misurato e quello che ogni modello prevedeva 3 giorni prima (meno per i modelli con l’etichetta gialla).</p>
+        </div>
+        <div class="f"><span>Grandezza</span>
+          <select id="dayVar">
+            <option value="tmax">Temperatura massima</option>
+            <option value="tmin">Temperatura minima</option>
+            <option value="wmean">Vento medio</option>
+            <option value="wmax">Vento massimo</option>
+            <option value="rain">Pioggia</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl" style="margin-top:14px"><table id="dayTbl"></table></div>
+      <p class="hint" id="dayHint" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2>Andamento ora per ora</h2>
+          <p class="hint" id="tsHint" style="margin:0"></p>
+        </div>
+        <div class="f"><span>Variabile</span>
+          <div class="seg" id="varSeg"></div>
+        </div>
+      </div>
+      <div class="legend" id="legend2" style="margin-top:12px"></div>
+      <div class="chartbox"><canvas id="cTS"></canvas></div>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>Fonti e metodo</summary>
+        <ul>
+          <li><b>Previsioni:</b> Open-Meteo, archivio delle corse passate dei modelli (Previous Runs API). Per ogni ora si usa il valore previsto dalla corsa di 3 giorni (72 ore) prima. Le previsioni sono calcolate sulle coordinate della stazione, non del centro città.</li>
+          <li><b>Misure:</b> bollettini meteo degli aeroporti (METAR, Aeronautica Militare/ENAV), dall’archivio dell’Iowa Environmental Mesonet. Di solito c’è una misura ogni 30 minuti; la temperatura è arrotondata al grado.</li>
+          <li><b>Abbinamento orario:</b> a ogni ora si associa la misura più vicina (entro ±30 minuti). Per la pioggia si guarda l’ora precedente, come nel dato del modello.</li>
+          <li><b>Pioggia:</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Quindi si verifica solo sì/no. Giorno piovoso previsto se ≥ 0,5 mm; nel grafico orario, ora piovosa se ≥ 0,1 mm.</li>
+          <li><b>Vento:</b> intensità media a 10 m; nodi convertiti in km/h (×1,852).</li>
+          <li><b>Modelli a corto raggio:</b> quelli ad alta risoluzione non arrivano a 3 giorni. Per ItaliaMeteo ICON-2I si usa la corsa di 2 giorni (48 ore) prima, per DWD ICON-D2 quella di 1 giorno prima (l’archivio non ha di più). Partono avvantaggiati e sono segnati con l’etichetta gialla.</li>
+          <li>Orari nel fuso di Roma. Periodo = ultimi giorni completi (oggi escluso).</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- Configuration ----------
+const LEAD = 3;   // days between forecast issue and verified day (models with a shorter range use their own `lead`)
+const MODELS = [
+  {id:'ecmwf_ifs025',          label:'ECMWF IFS',              def:true},
+  {id:'ecmwf_aifs025_single',  label:'ECMWF AIFS (IA)',        def:true},
+  {id:'icon_seamless',         label:'DWD ICON',               def:true},
+  {id:'italia_meteo_arpae_icon_2i', label:'ItaliaMeteo ICON-2I', def:true, lead:2},
+  {id:'gfs_seamless',          label:'NOAA GFS',               def:true},
+  {id:'meteofrance_seamless',  label:'Météo-France',           def:true},
+  {id:'ukmo_seamless',         label:'UK Met Office',          def:true},
+  {id:'gem_seamless',          label:'GEM Canada',             def:true},
+  {id:'ncep_aigfs025',         label:'NOAA AIGFS (IA)',        def:false},
+  {id:'jma_seamless',          label:'JMA Giappone',           def:false},
+  {id:'cma_grapes_global',     label:'CMA Cina',               def:false},
+  {id:'meteoswiss_icon_ch2',   label:'MeteoSwiss ICON-CH2 (Nord)', def:false},
+  {id:'icon_d2',               label:'DWD ICON-D2 (Nord)',     def:false, lead:1},
+];
+const MAX_ACTIVE = 8;
+const KT2KMH = 1.852;
+const RAIN_H = 0.1, RAIN_D = 0.5;
+const HOUR = 3600e3;
+
+const STATIONS = [["LIBA","Amendola",41.5381,15.7139,60],["LIBC","Crotone",38.9967,17.0792,161],["LIBD","Bari Palese",41.1381,16.765,44],["LIBF","Foggia",41.4329,15.535,80],["LIBG","Grottaglie",40.5172,17.3997,69],["LIBH","Marina di Ginosa",40.4244,16.8867,12],["LIBN","Lecce",40.2383,18.1389,61],["LIBP","Pescara",42.4372,14.1872,11],["LIBQ","Monte Scuro",39.3306,16.3964,1720],["LIBR","Brindisi",40.6577,17.9514,10],["LIBV","Gioia del Colle",40.7661,16.9353,350],["LIBY","Santa Maria di Leuca",39.8114,18.3422,112],["LICA","Lamezia Terme",38.9083,16.2417,15],["LICB","Comiso",36.9333,14.6,293],["LICC","Catania",37.4667,15.0639,17],["LICD","Lampedusa",35.4981,12.6183,20],["LICF","Messina",38.2,15.55,51],["LICG","Pantelleria",36.8139,11.9711,191],["LICJ","Palermo Punta Raisi",38.1819,13.0994,34],["LICL","Gela",37.0764,14.225,33],["LICR","Reggio Calabria",38.0719,15.6536,21],["LICT","Trapani",37.9142,12.4914,7],["LICZ","Sigonella",37.4056,14.9186,22],["LIEA","Alghero",40.6311,8.2886,23],["LIEC","Capo Carbonara",39.1039,9.5135,118],["LIED","Decimomannu",39.3461,8.9675,28],["LIEE","Cagliari Elmas",39.2434,9.0603,4],["LIEO","Olbia",40.8986,9.5178,13],["LIMA","Torino Aeritalia",45.0864,7.6034,287],["LIMC","Milano Malpensa",45.63,8.7231,211],["LIME","Bergamo Orio al Serio",45.6689,9.7003,237],["LIMF","Torino Caselle",45.2025,7.6494,287],["LIMG","Albenga",44.0458,8.1256,49],["LIMH","Plateau Rosa",45.9352,7.7072,3488],["LIMJ","Genova",44.4133,8.8375,3],["LIMK","Torino Bric della Croce",45.0333,7.7317,710],["LIML","Milano Linate",45.4614,9.2626,103],["LIMN","Cameri",45.5296,8.6692,169],["LIMP","Parma",44.8245,10.2964,50],["LIMS","Piacenza",44.9092,9.7278,138],["LIMU","Capo Mele",43.9572,8.1697,221],["LIMV","Passo dei Giovi",44.5522,8.9375,475],["LIMW","Aosta",45.7385,7.3687,545],["LIMY","Monte Malanotte",44.25,7.8,1742],["LIMZ","Cuneo",44.547,7.6232,380],["LIPA","Aviano",46.0286,12.6033,126],["LIPB","Bolzano",46.4603,11.3264,241],["LIPC","Cervia",44.2289,12.2919,10],["LIPE","Bologna",44.5308,11.2969,42],["LIPF","Ferrara",44.8156,11.6125,10],["LIPH","Treviso Sant'Angelo",45.6484,12.1944,23],["LIPI","Rivolto",45.9756,13.0492,53],["LIPK","Forlì",44.1956,12.0697,32],["LIPL","Ghedi",45.4206,10.2814,92],["LIPO","Brescia",45.4289,10.3306,109],["LIPQ","Trieste Ronchi dei Legionari",45.8275,13.4722,12],["LIPR","Rimini",44.0244,12.6128,13],["LIPS","Treviso Istrana",45.6839,12.1067,41],["LIPU","Padova",45.3958,11.8479,14],["LIPX","Verona Villafranca",45.3875,10.8723,68],["LIPY","Ancona Falconara",43.6167,13.3603,10],["LIPZ","Venezia Tessera",45.5053,12.3519,6],["LIQC","Capri",40.5582,14.2023,269],["LIQN","Rieti",42.4267,12.85,389],["LIQO","Monte Argentario",42.3869,11.1697,632],["LIQW","Sarzana",44.0872,9.985,10],["LIRA","Roma Ciampino",41.8078,12.5846,101],["LIRE","Pratica di Mare",41.6545,12.4452,12],["LIRF","Roma Fiumicino",41.8003,12.2389,3],["LIRG","Guidonia",41.9967,12.7344,89],["LIRH","Frosinone",41.645,13.2994,181],["LIRI","Salerno",40.6204,14.9113,40],["LIRK","Monte Terminillo",42.4667,12.9833,1875],["LIRL","Latina",41.5458,12.9097,26],["LIRM","Grazzanise",41.0606,14.0789,10],["LIRN","Napoli Capodichino",40.8848,14.2917,72],["LIRP","Pisa",43.6825,10.3956,2],["LIRQ","Firenze Peretola",43.8086,11.2028,38],["LIRS","Grosseto",42.7481,11.0589,7],["LIRT","Trevico",41.0467,15.2328,1093],["LIRU","Roma Urbe",41.9533,12.4999,24],["LIRV","Viterbo",42.4383,12.055,300],["LIRX","Monte Calamita (Elba)",42.73,10.38,297],["LIRZ","Perugia",43.0972,12.5103,205],["LIVC","Monte Cimone",44.1936,10.7,2173],["LIVD","Dobbiaco",46.73,12.22,1226],["LIVE","Passo Resia",46.8333,10.5,1800],["LIVF","Frontone",43.5169,12.7278,574],["LIVM","Punta Marina (Ravenna)",44.4414,12.2961,6],["LIVP","Monte Paganella",46.1434,11.0376,2129],["LIVR","Passo Rolle",46.2978,11.7867,2006],["LIVT","Trieste",45.6767,13.7538,20]].map(([sid,name,lat,lon,elev])=>({sid,name,lat,lon,elev}));
+
+// ---------- State ----------
+const st = {
+  stations:STATIONS, place:null, stationList:[], station:null,
+  active:new Set(MODELS.filter(m=>m.def).map(m=>m.id)),
+  slot:{}, data:null, tsVar:'t', chart:null
+};
+
+// ---------- Helpers ----------
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const mdef = id => MODELS.find(m=>m.id===id);
+const mlead = id => mdef(id).lead || LEAD;
+const mlabel = id => mdef(id).label + (mlead(id)!==LEAD ? ` (${mlead(id)} gg)` : '');
+const mname = id => mdef(id).label + (mlead(id)!==LEAD ? ` <span class="tag">${mlead(id)} gg</span>` : '');
+const mcolor = id => css('--s'+(st.slot[id]+1));
+const fmt = (v,d=1) => v==null||isNaN(v) ? '—' : v.toFixed(d).replace('.',',');
+const sgn = (v,d=1) => { if(v==null||isNaN(v)) return '—'; const r=+v.toFixed(d); return (r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(d).replace('.',','); };
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+// "YYYY-MM-DD HH:MM" or "YYYY-MM-DDTHH:MM" -> ms, as naive local time
+function tms(s){ return Date.UTC(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10), +s.slice(11,13)||0, +s.slice(14,16)||0); }
+function hav(a,b,c,d){ const R=6371, r=Math.PI/180; const x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2; return 2*R*Math.asin(Math.sqrt(x)); }
+function setStatus(msg, err){ const s=$('status'); s.textContent=msg; s.className='status'+(err?' err':''); }
+function dayLabel(d){ return new Date(d+'T12:00:00Z').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}); }
+function assignSlot(id){
+  if(st.slot[id]!=null) return;
+  const used=new Set(Object.values(st.slot));
+  for(let i=0;i<MAX_ACTIVE;i++) if(!used.has(i)){ st.slot[id]=i; return; }
+}
+MODELS.forEach(m=>{ if(m.def) assignSlot(m.id); });
+try{ const c=localStorage.getItem('mb_city'); if(c) $('city').value=c; }catch(e){}
+
+// ---------- Model chips ----------
+function renderChips(){
+  const box=$('chips'); box.innerHTML='';
+  MODELS.forEach(m=>{
+    const on=st.active.has(m.id);
+    const failed = st.data && st.data.fc[m.id] && !st.data.fc[m.id].ok;
+    const lab=document.createElement('label');
+    lab.className='chip'+(on?'':' off');
+    lab.title = failed ? 'Nessun dato per questo punto: '+st.data.fc[m.id].err : '';
+    lab.innerHTML=`<input type="checkbox" ${on?'checked':''}> ${on?`<span class="dot" style="background:${mcolor(m.id)}"></span>`:''}${mname(m.id)}${failed?' <span class="na">(n.d.)</span>':''}`;
+    lab.querySelector('input').addEventListener('change',e=>{
+      if(e.target.checked){
+        if(st.active.size>=MAX_ACTIVE){ e.target.checked=false; setStatus(`Massimo ${MAX_ACTIVE} modelli insieme: togline uno per aggiungerne un altro.`,true); return; }
+        st.active.add(m.id); assignSlot(m.id);
+      } else { st.active.delete(m.id); delete st.slot[m.id]; }
+      renderChips(); if(st.data) renderAll();
+    });
+    box.appendChild(lab);
+  });
+}
+renderChips();
+
+// ---------- Geocoding & stations ----------
+async function search(){
+  const q=$('city').value.trim();
+  if(!q){ setStatus('Scrivi il nome di una città.',true); return; }
+  setStatus('Cerco la località…');
+  try{
+    const r=await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=it&countryCode=IT`)).json();
+    const res=r.results||[];
+    if(!res.length){ setStatus('Nessuna località italiana trovata con questo nome.',true); return; }
+    try{ localStorage.setItem('mb_city',q); }catch(e){}
+    const sel=$('place'); sel.innerHTML=''; sel.disabled=false;
+    res.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=`${p.name}${p.admin2?' ('+p.admin2+')':p.admin1?' ('+p.admin1+')':''}`; sel.appendChild(o); });
+    sel.onchange=()=>pickPlace(res[+sel.value]);
+    pickPlace(res[0]);
+  }catch(e){ setStatus('Errore nella ricerca: '+e.message,true); }
+}
+
+function pickPlace(p){
+  st.place=p;
+  st.stationList=st.stations.filter(s=>s.elev==null||s.elev<=1000)
+    .map(s=>({...s,dist:hav(p.latitude,p.longitude,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6);
+  const sel=$('station'); sel.innerHTML=''; sel.disabled=false;
+  st.stationList.forEach((s,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=`${s.name} (${s.sid}) · ${Math.round(s.dist)} km`; sel.appendChild(o); });
+  sel.onchange=()=>{ st.station=st.stationList[+sel.value]; };
+  st.station=st.stationList[0];
+  $('runBtn').disabled=false;
+  const s=st.station;
+  setStatus(s.dist>30 ? `Attenzione: l’aeroporto più vicino è a ${Math.round(s.dist)} km, il confronto vale per quel punto. Premi “Confronta”.` : `Stazione più vicina: ${s.name}, a ${Math.round(s.dist)} km. Premi “Confronta”.`);
+}
+
+// ---------- Data loading ----------
+function periodDates(n){
+  // last n full days (Rome time), ending yesterday
+  const romeNow=new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Rome'}));
+  const end=new Date(Date.UTC(romeNow.getFullYear(),romeNow.getMonth(),romeNow.getDate()-1));
+  const start=new Date(end.getTime()-(n-1)*24*HOUR);
+  const days=[]; for(let t=start.getTime();t<=end.getTime();t+=24*HOUR) days.push(ymd(new Date(t)));
+  return {start,end,days};
+}
+
+async function fetchObs(sid,start,end){
+  const e2=new Date(end.getTime()+24*HOUR);
+  const u=`https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=${sid}&data=tmpc&data=sknt&data=wxcodes`+
+    `&year1=${start.getUTCFullYear()}&month1=${start.getUTCMonth()+1}&day1=${start.getUTCDate()}`+
+    `&year2=${e2.getUTCFullYear()}&month2=${e2.getUTCMonth()+1}&day2=${e2.getUTCDate()}`+
+    `&tz=Europe%2FRome&format=onlycomma&latlon=no&missing=M&trace=T&direct=no&report_type=3&report_type=4`;
+  const txt=await (await fetch(u)).text();
+  const lines=txt.trim().split('\n'); const hdr=lines.shift().split(',');
+  const iT=hdr.indexOf('tmpc'), iW=hdr.indexOf('sknt'), iX=hdr.indexOf('wxcodes'), iV=hdr.indexOf('valid');
+  const num=v=>(v==null||v==='M'||v==='')?null:+v;
+  return lines.map(l=>{ const c=l.split(',');
+    const wx=(c[iX]||'M')==='M'?'':c[iX];
+    // precipitation at the station (RA, DZ, SN… incl. SHRA/TSRA); "VC…" = in the vicinity -> ignored
+    const wet=wx.split(' ').some(tok=>{ tok=tok.replace(/^[+-]/,''); return tok && !tok.startsWith('VC') && /(RA|DZ|SN|SG|GR|GS|PL|UP)/.test(tok); });
+    const w=num(c[iW]);
+    return {s:c[iV], t:tms(c[iV]), temp:num(c[iT]), wind:w==null?null:w*KT2KMH, wet};
+  }).filter(o=>o.s && !isNaN(o.t));
+}
+
+async function fetchModel(id,sd,ed,lat,lon){
+  const L=mlead(id);
+  const vars=[`temperature_2m_previous_day${L}`,`wind_speed_10m_previous_day${L}`,`precipitation_previous_day${L}`];
+  const u=`https://previous-runs-api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${vars.join(',')}&models=${id}&start_date=${sd}&end_date=${ed}&timezone=Europe%2FRome&wind_speed_unit=kmh`;
+  try{
+    let j;
+    for(let attempt=1;attempt<=5;attempt++){
+      j=await (await fetch(u)).json();
+      if(!(j.error && /concurrent|too many|limit/i.test(j.reason||''))) break;
+      await new Promise(r=>setTimeout(r,1200*attempt));   // Open-Meteo rate limit: wait and retry
+    }
+    if(j.error) return {ok:false,err:j.reason};
+    const h=j.hourly;
+    const t=h[vars[0]], w=h[vars[1]], p=h[vars[2]];
+    if(!t || t.every(v=>v==null)) return {ok:false,err:`nessuna previsione a ${L} giorni`};
+    return {ok:true,time:h.time,t,w,p};
+  }catch(e){ return {ok:false,err:e.message}; }
+}
+
+// run async tasks with at most k in flight (Open-Meteo refuses too many concurrent requests)
+async function pool(tasks,k){
+  const res=[]; let i=0;
+  await Promise.all(Array.from({length:k},async()=>{ while(i<tasks.length){ const j=i++; res[j]=await tasks[j](); } }));
+  return res;
+}
+
+async function run(){
+  const s=st.station; if(!s) return;
+  const n=+$('period').value; const {start,end,days}=periodDates(n);
+  $('runBtn').disabled=true;
+  setStatus(`Scarico le misure di ${s.name} e le previsioni dei modelli…`);
+  try{
+    let done=0;
+    const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],days[days.length-1],s.lat.toFixed(4),s.lon.toFixed(4));
+      done++; setStatus(`Scarico le previsioni… ${done}/${MODELS.length} modelli`); return r; });
+    const [obsRaw, fcs]=await Promise.all([ fetchObs(s.sid,start,end), pool(tasks,3) ]);
+    const fc={}; MODELS.forEach((m,i)=>fc[m.id]=fcs[i]);
+    const inPeriod=obsRaw.filter(o=>days.includes(o.s.slice(0,10)));
+    if(inPeriod.length<20) throw new Error(`poche o nessuna misura disponibile per ${s.sid} nel periodo`);
+    if(!Object.values(fc).some(f=>f.ok)) throw new Error('nessun modello ha risposto: riprova tra un minuto');
+    st.data=buildData(days,inPeriod,fc);
+    const failed=MODELS.filter(m=>!fc[m.id].ok).map(m=>mlabel(m.id));
+    setStatus(`Fatto: ${inPeriod.length} bollettini dell’aeroporto, ${MODELS.length-failed.length} modelli con dati.`+(failed.length?` Non disponibili qui: ${failed.join(', ')}.`:''));
+    $('results').classList.remove('hidden');
+    renderChips(); renderAll();
+  }catch(e){ setStatus('Errore: '+e.message,true); }
+  $('runBtn').disabled=false;
+}
+
+// ---------- Processing ----------
+function buildData(days,obs,fc){
+  const ref=Object.values(fc).find(f=>f.ok);
+  const times=ref.time, T=times.map(tms);
+  const idx=new Map(T.map((t,i)=>[t,i]));
+  // hourly obs: nearest report within ±30 min (temp, wind); rain = any wet report in (H-1h, H]
+  const oT=Array(T.length).fill(null), oW=Array(T.length).fill(null), oR=Array(T.length).fill(null);
+  const best=Array(T.length).fill(Infinity);
+  obs.forEach(o=>{
+    const h=Math.round(o.t/HOUR)*HOUR, i=idx.get(h), d=Math.abs(o.t-h);
+    if(i!=null && d<=30*60e3 && d<best[i]){ best[i]=d; oT[i]=o.temp; oW[i]=o.wind; }
+    const j=idx.get(Math.ceil(o.t/HOUR)*HOUR);
+    if(j!=null) oR[j]=(oR[j]||false)||o.wet;
+  });
+  // daily obs
+  const od={};
+  days.forEach(d=>{
+    const L=obs.filter(o=>o.s.slice(0,10)===d);
+    const tt=L.map(o=>o.temp).filter(v=>v!=null), ww=L.map(o=>o.wind).filter(v=>v!=null);
+    od[d]= L.length<20 ? null : {
+      tmax:tt.length?Math.max(...tt):null, tmin:tt.length?Math.min(...tt):null,
+      wmean:ww.length?ww.reduce((a,b)=>a+b,0)/ww.length:null, wmax:ww.length?Math.max(...ww):null,
+      rain:L.some(o=>o.wet), rainH:new Set(L.filter(o=>o.wet).map(o=>o.s.slice(11,13))).size };
+  });
+  // daily forecasts
+  const dayIdx={}; days.forEach(d=>dayIdx[d]=times.map((t,i)=>t.startsWith(d)?i:-1).filter(i=>i>=0));
+  const fd={};
+  for(const [id,f] of Object.entries(fc)){ if(!f.ok) continue; fd[id]={};
+    days.forEach(d=>{
+      const ii=dayIdx[d];
+      const t=ii.map(i=>f.t[i]).filter(v=>v!=null), w=ii.map(i=>f.w[i]).filter(v=>v!=null), p=ii.map(i=>f.p[i]).filter(v=>v!=null);
+      fd[id][d]= t.length<20 ? null : { tmax:Math.max(...t), tmin:Math.min(...t),
+        wmean:w.length?w.reduce((a,b)=>a+b,0)/w.length:null, wmax:w.length?Math.max(...w):null,
+        psum:p.length>=20?p.reduce((a,b)=>a+b,0):null };
+    });
+  }
+  // metrics
+  const M={};
+  for(const [id,f] of Object.entries(fc)){ if(!f.ok) continue;
+    const et=[], ew=[];
+    T.forEach((_,i)=>{
+      if(f.t[i]!=null && oT[i]!=null) et.push(f.t[i]-oT[i]);
+      if(f.w[i]!=null && oW[i]!=null) ew.push(f.w[i]-oW[i]);
+    });
+    const stat=e=> e.length<Math.max(12,T.length*0.25) ? null :
+      {mae:e.reduce((s,x)=>s+Math.abs(x),0)/e.length, bias:e.reduce((s,x)=>s+x,0)/e.length, n:e.length};
+    // rain, day by day: hit = rain forecast and fell; fa = false alarm; miss = rain not forecast; dry = dry forecast, dry day
+    let hit=0, fa=0, miss=0, dry=0;
+    days.forEach(d=>{ const o=od[d], p=fd[id][d]; if(!(o&&p&&p.psum!=null)) return;
+      const F=p.psum>=RAIN_D; if(F&&o.rain) hit++; else if(F) fa++; else if(o.rain) miss++; else dry++; });
+    const nd=hit+fa+miss+dry, ev=hit+fa+miss;
+    // index = hits / (hits + false alarms + misses); no rain forecast and none fell -> nothing got wrong -> 1
+    M[id]={ t:stat(et), w:stat(ew),
+      r: nd<Math.max(1,Math.ceil(days.length*0.5)) ? null : {idx: ev? hit/ev : 1, noEvents:!ev, hit, fa, miss, dry, ok:hit+dry, nd} };
+  }
+  return {days,times,oT,oW,oR,od,fd,fc,M};
+}
+
+// ---------- Rendering ----------
+function renderAll(){ renderMeta(); renderRank(); renderDay(); renderVarSeg(); renderTS(); }
+function activeOk(){ return MODELS.filter(m=>st.active.has(m.id) && st.data.fc[m.id].ok).map(m=>m.id); }
+
+function renderMeta(){
+  const s=st.station, D=st.data, p=st.place;
+  const rainDays=D.days.filter(d=>D.od[d]&&D.od[d].rain).length;
+  $('meta').innerHTML=`<span>Città: <b>${p.name}</b></span><span>Stazione: <b>${s.name} (${s.sid})</b>, ${Math.round(s.dist)} km${s.elev!=null?`, ${Math.round(s.elev)} m s.l.m.`:''}</span>`+
+    `<span>Periodo: <b>${dayLabel(D.days[0])} – ${dayLabel(D.days[D.days.length-1])}</b> (${D.days.length} giorni)</span><span>Giorni di pioggia misurati: <b>${rainDays}</b></span>`+
+    (s.dist>30?`<span class="warn">Stazione lontana dalla città: il confronto vale per l’aeroporto.</span>`:'');
+}
+
+function ranks(ids,val,asc){
+  const v=ids.map(id=>({id,x:val(id)})).filter(o=>o.x!=null).sort((a,b)=>asc?a.x-b.x:b.x-a.x);
+  const r={}; v.forEach((o,i)=>{ r[o.id]= i>0 && Math.abs(o.x-v[i-1].x)<1e-9 ? r[v[i-1].id] : i+1; }); return r;
+}
+
+function renderRank(){
+  const D=st.data, ids=activeOk(), m=id=>D.M[id];
+  const fT=id=>m(id).t&&m(id).t.mae, fW=id=>m(id).w&&m(id).w.mae, fR=id=>m(id).r&&m(id).r.idx;
+  const rT=ranks(ids,fT,true), rW=ranks(ids,fW,true), rR=ranks(ids,id=>m(id).r&&(m(id).r.idx+m(id).r.ok*1e-4),false);   // ties broken by days right
+  const rows=ids.map(id=>({id,score:(rT[id]&&rW[id]&&rR[id])?(rT[id]+rW[id]+rR[id])/3:null}))
+    .sort((a,b)=>(a.score??99)-(b.score??99));
+  const bestOf=(f,asc)=>{ const v=ids.map(f).filter(x=>x!=null); return v.length?(asc?Math.min(...v):Math.max(...v)):null; };
+  const bT=bestOf(fT,true), bW=bestOf(fW,true), bR=bestOf(fR,false);
+  const cls=(v,b)=>v!=null&&b!=null&&Math.abs(v-b)<1e-9?' class="best"':'';
+  let pos=0, prev=null;
+  let h=`<thead><tr><th class="l">#</th><th class="l">Modello</th><th>Temperatura<br>errore medio</th><th>Temperatura<br>tendenza</th><th>Vento<br>errore medio</th><th>Vento<br>tendenza</th><th>Pioggia<br>indice</th><th>Giorni di pioggia<br>presi · falsi allarmi · mancati</th><th>Pioggia<br>giorni azzeccati</th></tr></thead><tbody>`;
+  rows.forEach((r,i)=>{ const x=m(r.id);
+    if(r.score!=null){ if(r.score!==prev) pos=i+1; prev=r.score; }
+    h+=`<tr><td class="rank">${r.score!=null?pos:'<span class="na">–</span>'}</td>
+      <td class="l"><span class="dot" style="background:${mcolor(r.id)}"></span> ${mname(r.id)}</td>
+      <td${cls(fT(r.id),bT)}>${x.t?fmt(x.t.mae,2)+' °C':'<span class="na">n.d.</span>'}</td>
+      <td>${x.t?sgn(x.t.bias)+' °C':''}</td>
+      <td${cls(fW(r.id),bW)}>${x.w?fmt(x.w.mae,2)+' km/h':'<span class="na">n.d.</span>'}</td>
+      <td>${x.w?sgn(x.w.bias)+' km/h':''}</td>
+      <td${cls(fR(r.id),bR)}>${x.r?fmt(x.r.idx,2)+(x.r.noEvents?' <span class="na">(nessuna pioggia)</span>':''):'<span class="na">n.d.</span>'}</td>
+      <td>${x.r?`<span class="ok">${x.r.hit}</span> · <span class="ko">${x.r.fa}</span> · <span class="ko">${x.r.miss}</span>`:''}</td>
+      <td class="na">${x.r?`${x.r.ok} su ${x.r.nd}`:''}</td></tr>`;
+  });
+  $('rankTbl').innerHTML=h+'</tbody>';
+  // winner banner
+  const names=(f,b)=> b==null ? '—' : ids.filter(id=>{ const x=f(id); return x!=null && Math.abs(x-b)<1e-9; }).map(mlabel).join(', ');
+  const top=rows.filter(r=>r.score!=null && r.score===rows[0].score);
+  $('winner').innerHTML = !top.length ? `<span class="na">Nessun modello ha dati completi.</span>` :
+    `<div class="wlabel">Vincitore</div>
+     <div class="wname">${top.map(r=>`<span class="dot" style="background:${mcolor(r.id)}"></span> ${mname(r.id)}`).join(' &nbsp;·&nbsp; ')}${top.length>1?' <span class="na">(pari merito)</span>':''}</div>
+     <div class="wcats"><span>Migliore per temperatura: <b>${names(fT,bT)}</b></span><span>per vento: <b>${names(fW,bW)}</b></span><span>per pioggia: <b>${names(fR,bR)}</b></span></div>
+     ${top.some(r=>mlead(r.id)!==LEAD)?'<div class="wnote">Attenzione: il vincitore usa una previsione a meno di 3 giorni, più facile di quella degli altri modelli.</div>':''}
+     ${D.days.length<14?`<div class="wnote">Con soli ${D.days.length} giorni il risultato può cambiare molto da una settimana all’altra: per un verdetto più solido scegli 30 giorni.</div>`:''}`;
+}
+
+function renderDay(){
+  const D=st.data, v=$('dayVar').value, ids=activeOk();
+  const isT=v==='tmax'||v==='tmin', unit=isT?' °C':' km/h', span=isT?4:12;
+  const cold=css('--div-cold'), warm=css('--div-warm');
+  const bg=err=>{ if(err==null) return ''; const k=Math.min(1,Math.abs(err)/span)*55; return `background:color-mix(in oklab, ${err<0?cold:warm} ${k.toFixed(0)}%, transparent)`; };
+  let h=`<thead><tr><th class="l">Giorno</th><th>Misurato</th>${ids.map(id=>`<th><span class="dot" style="background:${mcolor(id)}"></span> ${mname(id)}</th>`).join('')}</tr></thead><tbody>`;
+  const agg={}; ids.forEach(id=>agg[id]={s:0,n:0});
+  D.days.forEach(d=>{
+    const o=D.od[d];
+    const ov = !o ? '<span class="na">n.d.</span>' : v==='rain' ? (o.rain?`sì (${o.rainH} ${o.rainH===1?'ora':'ore'})`:'no') : fmt(o[v])+unit;
+    h+=`<tr><td class="l">${dayLabel(d)}</td><td class="obs">${ov}</td>`;
+    ids.forEach(id=>{ const p=D.fd[id][d];
+      if(!p){ h+='<td class="na">n.d.</td>'; return; }
+      if(v==='rain'){
+        if(p.psum==null){ h+='<td class="na">n.d.</td>'; return; }
+        const txt=`${fmt(p.psum)} mm`;
+        if(!o){ h+=`<td>${txt}</td>`; return; }
+        const F=p.psum>=RAIN_D;
+        const [cl,lab,k] = F&&o.rain ? ['ok','✓ presa','hit'] : F ? ['ko','✗ falso allarme','fa'] : o.rain ? ['ko','✗ mancata','miss'] : ['na','','dry'];
+        agg[id][k]=(agg[id][k]||0)+1;
+        h+= k==='dry' ? `<td class="na">${txt}</td>` : `<td><span class="${cl}">${lab}</span> ${txt}</td>`; return;
+      }
+      const val=p[v], err=(o&&o[v]!=null&&val!=null)?val-o[v]:null;
+      if(err!=null){ agg[id].s+=Math.abs(err); agg[id].n++; }
+      h+=`<td style="${bg(err)}">${fmt(val)}${err!=null?` <span class="na">(${sgn(err)})</span>`:''}</td>`;
+    });
+    h+='</tr>';
+  });
+  const rainFoot=a=>{ const hit=a.hit||0, fa=a.fa||0, miss=a.miss||0, ev=hit+fa+miss;
+    return `${fmt(ev?hit/ev:1,2)} <span class="na">= ${hit} ÷ (${hit}+${fa}+${miss})</span>`; };
+  h+=`<tr class="foot"><td class="l">${v==='rain'?'Indice pioggia':'Errore medio'}</td><td></td>`+
+    ids.map(id=>{ const a=agg[id]; return `<td>${v==='rain'?rainFoot(a):!a.n?'—':fmt(a.s/a.n)+unit}</td>`; }).join('')+'</tr>';
+  $('dayTbl').innerHTML=h+'</tbody>';
+  $('dayHint').textContent = v==='rain'
+    ? `Millimetri previsti per il giorno, 3 giorni prima (meno per i modelli con l’etichetta gialla). Il modello “prevede pioggia” se ≥ ${fmt(RAIN_D)} mm. ✓ presa = pioggia prevista e caduta; ✗ falso allarme = prevista ma non caduta; ✗ mancata = caduta ma non prevista; in grigio i giorni asciutti previsti asciutti, che l’indice non conta.`
+    : `Tra parentesi l’errore rispetto al misurato. Sfondo azzurro = previsto più ${isT?'freddo':'debole'}, rosso = più ${isT?'caldo':'forte'}; più intenso = errore maggiore.`;
+}
+
+function renderVarSeg(){
+  const seg=$('varSeg'); seg.innerHTML='';
+  [['t','Temperatura'],['w','Vento'],['r','Pioggia']].forEach(([k,l])=>{
+    const b=document.createElement('button'); b.type='button'; b.textContent=l; b.className=st.tsVar===k?'on':'';
+    b.addEventListener('click',()=>{ st.tsVar=k; renderVarSeg(); renderTS(); });
+    seg.appendChild(b); });
+}
+
+function legendHTML(withObs){
+  return (withObs?`<span><i class="ln" style="background:var(--obs)"></i>Misurato</span>`:'')+
+    activeOk().map(id=>`<span><i class="ln" style="background:${mcolor(id)}"></i>${mname(id)}</span>`).join('');
+}
+
+const rainBands={ id:'rainBands', beforeDatasetsDraw(ch,_,opts){
+  const oR=opts.oR; if(!oR) return; const {ctx,chartArea:a,scales:{x}}=ch; ctx.save(); ctx.fillStyle=opts.color;
+  oR.forEach((w,i)=>{ if(w){ const x0=x.getPixelForValue(i-1), x1=x.getPixelForValue(i); ctx.fillRect(Math.max(a.left,x0),a.top,Math.max(1,x1-x0),a.bottom-a.top); } });
+  ctx.restore(); } };
+
+function renderTS(){
+  if(typeof Chart==='undefined'){ $('tsHint').textContent='Grafico non disponibile: libreria non caricata (serve internet).'; return; }
+  const D=st.data, v=st.tsVar, ids=activeOk();
+  const ink2=css('--ink2'), grid=css('--grid'), surf=css('--surface'), ink=css('--ink'), ring=css('--axis');
+  const labels=D.times.map(t=>`${new Date(tms(t)).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'})} ${t.slice(11,16)}`);
+  const datasets=[];
+  if(v!=='r') datasets.push({label:'Misurato',data:v==='t'?D.oT:D.oW.map(x=>x==null?null:Math.round(x*10)/10),borderColor:css('--obs'),backgroundColor:css('--obs'),borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:true,order:0});
+  ids.forEach(id=>{ const f=D.fc[id];
+    datasets.push({label:mlabel(id),data:v==='t'?f.t:v==='w'?f.w:f.p,borderColor:mcolor(id),backgroundColor:mcolor(id),borderWidth:1.6,pointRadius:0,pointHoverRadius:4,spanGaps:false,order:1}); });
+  const unit=v==='t'?' °C':v==='w'?' km/h':' mm';
+  const days=D.days.length;
+  const opts={
+    responsive:true, maintainAspectRatio:false, animation:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},
+      tooltip:{backgroundColor:surf,titleColor:ink,bodyColor:ink,borderColor:ring,borderWidth:1,padding:10,boxPadding:4,usePointStyle:true,
+        itemSort:(a,b)=>(b.raw??-1e9)-(a.raw??-1e9),
+        callbacks:{title:c=>labels[c[0].dataIndex]+(v==='r'?(D.oR[c[0].dataIndex]?' · pioggia misurata: sì':' · pioggia misurata: no'):''),
+                   label:c=>` ${c.dataset.label}: ${c.raw==null?'n.d.':fmt(c.raw,1)+unit}`}},
+      rainBands: v==='r' ? {oR:D.oR,color:css('--rainband')} : {}},
+    scales:{
+      x:{grid:{display:false},border:{color:ring},ticks:{color:ink2,maxRotation:0,autoSkip:false,
+        callback:(val,i)=>{ const t=D.times[i]; if(t.slice(11,13)!=='00') return ''; const k=Math.round((tms(t)-tms(D.times[0]))/864e5); return (days<=14||k%3===0)?labels[i].split(' ').slice(0,2).join(' '):''; }}},
+      y:{grid:{color:grid},border:{display:false},ticks:{color:ink2},beginAtZero:v!=='t',title:{display:true,text:v==='t'?'°C':v==='w'?'km/h':'mm/ora',color:ink2}}
+    }
+  };
+  $('tsHint').textContent = v==='r'
+    ? 'Fasce azzurre = ore in cui all’aeroporto pioveva. Linee = millimetri all’ora previsti 3 giorni prima (meno per i modelli con l’etichetta gialla).'
+    : 'Linea spessa = misurato. Linee colorate = previsioni emesse 3 giorni prima (meno per i modelli con l’etichetta gialla).';
+  $('legend2').innerHTML = v==='r'
+    ? `<span><i class="ln" style="background:var(--rainband);height:12px;width:12px"></i>Pioggia misurata</span>`+legendHTML(false)
+    : legendHTML(true);
+  if(st.chart) st.chart.destroy();
+  st.chart=new Chart($('cTS'),{type:'line',data:{labels,datasets},options:opts,plugins:[rainBands]});
+}
+
+// ---------- Events ----------
+window.addEventListener('error',e=>setStatus('Errore nella pagina: '+e.message,true));
+window.addEventListener('unhandledrejection',e=>setStatus('Errore: '+(e.reason&&e.reason.message||e.reason),true));
+$('searchBtn').addEventListener('click',search);
+$('city').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
+$('runBtn').addEventListener('click',run);
+$('dayVar').addEventListener('change',()=>{ if(st.data) renderDay(); });
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ renderChips(); if(st.data) renderAll(); }); }catch(e){}
+if(typeof Chart==='undefined') setStatus('Libreria dei grafici non caricata: serve la connessione internet.',true);
+</script>
+</body>
+</html>
