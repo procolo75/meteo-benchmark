@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.3.1 — 24/09/2026
+- Classifica a punti: il vento si divide in **vento medio** (ora per ora, soglia abbassata da 10 a 5 km/h, perché con 10 quasi tutti i modelli prendevano oltre il 90% dei punti) e **vento massimo** (giorno per giorno, 1 punto se il massimo del giorno è entro 10 km/h dal misurato). L’ordine è ora la media di quattro piazzamenti.
+
 ## v1.3.0 — 24/09/2026
 - Nuova **Classifica a punti**, sotto la classifica principale (che resta invariata): 1 punto per ogni ora con temperatura prevista entro ±1 °C dal misurato, 1 punto per ogni ora con vento entro ±10 km/h; per la pioggia l’indice. Posizione in ciascuna delle tre classifiche e ordine per media dei piazzamenti.
 
