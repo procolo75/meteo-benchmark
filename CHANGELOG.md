@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.9.0 — 24/09/2026
+- Classifica a punti: tutte le soglie sono **impostabili** sulla pagina (temperatura, vento medio, vento massimo, oltre alla pioggia), con un pulsante per tornare ai valori predefiniti; il browser le ricorda e la classifica si ricalcola subito.
+- Spiegazione estesa, con esempi, della pioggia oraria e a 3 ore e del significato di «x su y».
+- Nelle due classifiche si ordina la tabella **cliccando sull’intestazione** di una colonna (il migliore prima; di nuovo per invertire; su # si torna all’ordine della classifica).
+- I modelli ora sono scaricati fino alla mezzanotte che chiude l’ultimo giorno: conta anche l’ora 24:00 (per esempio 710 ore su 30 giorni invece di 709).
+
 ## v1.8.0 — 24/09/2026
 - Tolto il grafico a linee «Andamento ora per ora» (e la libreria Chart.js): la pagina non ha più dipendenze esterne.
 - Classifica per errore: il valore migliore di ogni colonna è evidenziato in giallo, come nella classifica a punti.
