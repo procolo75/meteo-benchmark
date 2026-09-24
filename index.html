@@ -133,7 +133,10 @@ details li{margin:4px 0}
       <p class="hint" style="margin:0 0 4px">L’unico modello con l’etichetta gialla (<span class="tag">2 gg</span>) non prevede fino a 3 giorni: per lui si usa la previsione di 2 giorni prima, che è più facile. Tienine conto nel confronto.</p>
       <div class="meta" id="meta"></div>
       <div id="note"></div>
-      <p class="hint" style="margin:12px 0 0">Ora per ora, il modello prende <b>1 punto</b> quando la temperatura prevista è entro <b>1 °C</b> da quella misurata, e 1 punto quando il vento medio previsto è entro <b>5 km/h</b>. Giorno per giorno, prende 1 punto quando il <b>vento massimo</b> del giorno è entro <b>10 km/h</b> da quello misurato. Più punti è meglio; tra parentesi la percentuale sulle ore (o sui giorni) confrontati. Per la pioggia vale l’indice spiegato nella classifica per errore, qui sotto. L’ordine è la media dei quattro piazzamenti; evidenziato in giallo il migliore di ogni classifica.</p>
+      <p class="hint" style="margin:12px 0 0">Ora per ora, il modello prende <b>1 punto</b> quando la temperatura prevista è entro <b>1 °C</b> da quella misurata, e 1 punto quando il vento medio previsto è entro <b>5 km/h</b>. Giorno per giorno, prende 1 punto quando il <b>vento massimo</b> del giorno è entro <b>10 km/h</b> da quello misurato. Più punti è meglio; tra parentesi la percentuale sulle ore (o sui giorni) confrontati. Per la pioggia giornaliera vale l’indice spiegato nella classifica per errore, qui sotto.</p>
+      <p class="hint" style="margin:8px 0 0"><b>Pioggia oraria e a 3 ore</b>: contano solo le ore (o i blocchi di 3 ore) in cui è piovuto o il modello prevedeva pioggia (almeno 0,2 mm); le altre sono facili e non contano. Il modello prende 1 punto quando ha previsto pioggia ed è piovuto davvero; con le stazioni meteo, che misurano i millimetri, serve anche che la quantità prevista sia entro la <b>tolleranza</b> da quella misurata. Per gli aeroporti, che non danno i millimetri, conta solo sì/no. La posizione si basa sulla percentuale di punti, così chi prevede pioggia sempre non viene premiato; passa sopra i numeri per falsi allarmi e ore mancate.</p>
+      <p class="hint" style="margin:8px 0 0">L’ordine è la media dei piazzamenti in tutte le colonne disponibili; evidenziato in giallo il migliore di ogni classifica.</p>
+      <div class="f hidden" id="rainTolBox" style="margin-top:12px;flex-direction:row;align-items:center;gap:8px"><span>Tolleranza sulla quantità di pioggia: ±</span><input type="number" id="rainTol" min="0" step="0.1" style="width:80px"><span>mm</span></div>
       <div class="tbl" style="margin-top:14px"><table id="ptsTbl"></table></div>
     </div>
 
@@ -268,6 +271,7 @@ const MH_R = 25;   // km: MeteoHub stations offered around the place
 const NCOL = 8;   // palette size: beyond it colours repeat with a dashed, then dotted line
 const KT2KMH = 1.852;
 const RAIN_H = 0.1, RAIN_D = 0.5;
+const RAIN_TOL = 1;  // default tolerance (mm) on the rain amount in the hourly / 3-hour points, settable on the page
 const RAIN_G = 0.2;   // rain gauge: one tip of the bucket; below that a station hour/day counts as dry
 const PT_T = 1, PT_W = 5;    // points ranking: one point per hour with |error| within these (°C, km/h)
 const PT_WX = 10;            // ... and one per day with the daily max wind within this (km/h)
@@ -279,7 +283,7 @@ const STATIONS = [["LIBA","Amendola",41.5381,15.7139,60],["LIBC","Crotone",38.99
 const st = {
   stations:STATIONS, place:null, stationList:[], station:null,
   active:new Set(MODELS.filter(m=>m.def).map(m=>m.id)),
-  slot:{}, data:null, tsVar:'t', dayMode:'val', chart:null
+  slot:{}, data:null, rainTol:RAIN_TOL, tsVar:'t', dayMode:'val', chart:null
 };
 
 // ---------- Helpers ----------
@@ -546,13 +550,14 @@ function buildData(days,obs,fc){
   const times=ref.time, T=times.map(tms);
   const idx=new Map(T.map((t,i)=>[t,i]));
   // hourly obs: nearest report within ±30 min (temp, wind); rain = any wet report in (H-1h, H]
-  const oT=Array(T.length).fill(null), oW=Array(T.length).fill(null), oR=Array(T.length).fill(null);
+  const oT=Array(T.length).fill(null), oW=Array(T.length).fill(null), oR=Array(T.length).fill(null), oP=Array(T.length).fill(null);
   const best=Array(T.length).fill(Infinity);
   obs.forEach(o=>{
     const h=Math.round(o.t/HOUR)*HOUR, i=idx.get(h), d=Math.abs(o.t-h);
     if(i!=null && d<=30*60e3 && d<best[i]){ best[i]=d; oT[i]=o.temp; oW[i]=o.wind; }
     const j=idx.get(Math.ceil(o.t/HOUR)*HOUR);
     if(j!=null && !obs.noRain) oR[j]=(oR[j]||false)||o.wet;
+    if(j!=null && o.mm!=null) oP[j]=(oP[j]||0)+o.mm;
   });
   // daily obs
   const od={};
@@ -603,7 +608,7 @@ function buildData(days,obs,fc){
       wx: dx.length<Math.max(1,Math.ceil(days.length*0.5)) ? null : {pts:dx.filter(x=>Math.abs(x)<=PT_WX+1e-9).length, n:dx.length},
       r: nd<Math.max(1,Math.ceil(days.length*0.5)) ? null : {idx: ev? hit/ev : 1, noEvents:!ev, hit, fa, miss, dry, ok:hit+dry, nd} };
   }
-  return {days,times,oT,oW,oR,od,fd,fc,M};
+  return {days,times,oT,oW,oR,oP,od,fd,fc,M};
 }
 
 // ---------- Rendering ----------
@@ -664,18 +669,47 @@ function renderRank(){
 // Points ranking: a point for every hour the forecast lands within PT_T °C / PT_W km/h of
 // the measurement, and for every day the max wind is within PT_WX km/h; rain keeps its index.
 // Ordered like the main table, by mean placement.
+// Rain points over blocks of `step` hours (1 or 3; a 3-hour block is 00-03, 03-06… Rome time). Only blocks where rain
+// fell or was forecast (≥ RAIN_G mm) count, otherwise a model that never forecasts rain would collect the dry hours.
+// A point when both happened and, if the station measures millimetres, the amounts differ by at most `tol` mm.
+function rainPts(D,f,step,tol){
+  let hit=0, qty=0, fa=0, miss=0, known=0;
+  for(let i=1;i+step-1<D.times.length;){
+    // blocks end at 03, 06, 09… (hourly values are the hour just ended); realign after a DST change
+    if(step===3 && (+D.times[i].slice(11,13))%3!==1){ i++; continue; }
+    const J=Array.from({length:step},(_,k)=>i+k);
+    i+=step;
+    const oR=J.map(j=>D.oR[j]); if(oR.every(x=>x==null)) continue;
+    const fp=J.map(j=>f.p[j]); if(fp.some(x=>x==null)) continue;
+    known++;
+    const O=oR.some(x=>x), fs=fp.reduce((a,b)=>a+b,0), F=fs>=RAIN_G;
+    const op=J.map(j=>D.oP[j]), mm=op.every(x=>x!=null) ? op.reduce((a,b)=>a+b,0) : null;
+    if(F&&O){ if(mm==null || Math.abs(fs-mm)<=tol+1e-9) hit++; else qty++; }
+    else if(F) fa++; else if(O) miss++;
+  }
+  if(known<Math.max(6,D.times.length*0.25/step)) return null;
+  const ev=hit+qty+fa+miss;
+  return {pts:hit, n:ev, pct: ev? hit/ev : 1, qty, fa, miss};
+}
+
 function renderPts(){
-  const D=st.data, ids=activeOk(), m=id=>D.M[id];
+  const D=st.data, ids=activeOk(), m=id=>D.M[id], tol=st.rainTol;
+  const R1={}, R3={}; ids.forEach(id=>{ R1[id]=rainPts(D,D.fc[id],1,tol); R3[id]=rainPts(D,D.fc[id],3,tol); });
+  const hasMM=D.oP.some(x=>x!=null);
   const fT=id=>m(id).t&&m(id).t.pts, fW=id=>m(id).w&&m(id).w.pts, fX=id=>m(id).wx&&m(id).wx.pts;
   const rT=ranks(ids,fT,false), rW=ranks(ids,fW,false), rX=ranks(ids,fX,false), rR=ranks(ids,id=>m(id).r&&(m(id).r.idx+m(id).r.ok*1e-4),false);
-  const sc=meanRank(ids,[rT,rW,rX,rR]), rows=ids.map(id=>({id,score:sc(id)}))
+  const r1=ranks(ids,id=>R1[id]&&R1[id].pct+R1[id].pts*1e-6,false), r3=ranks(ids,id=>R3[id]&&R3[id].pct+R3[id].pts*1e-6,false);   // ties broken by points
+  const sc=meanRank(ids,[rT,rW,rX,rR,r1,r3]), rows=ids.map(id=>({id,score:sc(id)}))
     .sort((a,b)=>(a.score??99)-(b.score??99));
   const pos=r=>r?`<span class="na">${r}°</span>`:'';
   const cls=r=>r===1?' class="top"':'';
   const pct=x=>x?` <span class="na">su ${x.n} (${Math.round(x.pts/x.n*100)}%)</span>`:'';
   const pts=x=>x?x.pts+pct(x):'<span class="na">n.d.</span>';
+  const rp=x=>!x?'<span class="na">n.d.</span>':!x.n?'<span class="na">nessuna pioggia</span>':
+    `<span title="${x.pts} prese${hasMM?`, ${x.qty} fuori tolleranza`:''}, ${x.fa} falsi allarmi, ${x.miss} mancate">${x.pts} <span class="na">su ${x.n} (${Math.round(x.pct*100)}%)</span></span>`;
+  const tolTxt=hasMM?`, entro ±${fmt(tol)} mm`:'';
   let p=0, prev=null;
-  let h=`<thead><tr><th class="l">#</th><th class="l">Modello</th><th>Temperatura<br>punti (ore entro ±${fmt(PT_T,0)} °C)</th><th>Temperatura<br>posizione</th><th>Vento medio<br>punti (ore entro ±${fmt(PT_W,0)} km/h)</th><th>Vento medio<br>posizione</th><th>Vento massimo<br>punti (giorni entro ±${fmt(PT_WX,0)} km/h)</th><th>Vento massimo<br>posizione</th><th>Pioggia<br>indice</th><th>Pioggia<br>posizione</th></tr></thead><tbody>`;
+  let h=`<thead><tr><th class="l">#</th><th class="l">Modello</th><th>Temperatura<br>punti (ore entro ±${fmt(PT_T,0)} °C)</th><th>Temperatura<br>posizione</th><th>Vento medio<br>punti (ore entro ±${fmt(PT_W,0)} km/h)</th><th>Vento medio<br>posizione</th><th>Vento massimo<br>punti (giorni entro ±${fmt(PT_WX,0)} km/h)</th><th>Vento massimo<br>posizione</th><th>Pioggia<br>indice</th><th>Pioggia<br>posizione</th><th>Pioggia oraria<br>ore prese${tolTxt}</th><th>Pioggia oraria<br>posizione</th><th>Pioggia a 3 ore<br>blocchi presi${tolTxt}</th><th>Pioggia a 3 ore<br>posizione</th></tr></thead><tbody>`;
   rows.forEach((r,i)=>{ const x=m(r.id);
     if(r.score!=null){ if(r.score!==prev) p=i+1; prev=r.score; }
     h+=`<tr><td class="rank">${r.score!=null?p:'<span class="na">–</span>'}</td>
@@ -683,9 +717,12 @@ function renderPts(){
       <td${cls(rT[r.id])}>${pts(x.t)}</td><td>${pos(rT[r.id])}</td>
       <td${cls(rW[r.id])}>${pts(x.w)}</td><td>${pos(rW[r.id])}</td>
       <td${cls(rX[r.id])}>${pts(x.wx)}</td><td>${pos(rX[r.id])}</td>
-      <td${cls(rR[r.id])}>${x.r?fmt(x.r.idx,2)+(x.r.noEvents?' <span class="na">(nessuna pioggia)</span>':''):'<span class="na">n.d.</span>'}</td><td>${pos(rR[r.id])}</td></tr>`;
+      <td${cls(rR[r.id])}>${x.r?fmt(x.r.idx,2)+(x.r.noEvents?' <span class="na">(nessuna pioggia)</span>':''):'<span class="na">n.d.</span>'}</td><td>${pos(rR[r.id])}</td>
+      <td${cls(r1[r.id])}>${rp(R1[r.id])}</td><td>${pos(r1[r.id])}</td>
+      <td${cls(r3[r.id])}>${rp(R3[r.id])}</td><td>${pos(r3[r.id])}</td></tr>`;
   });
   $('ptsTbl').innerHTML=h+'</tbody>';
+  $('rainTolBox').classList.toggle('hidden',!hasMM);
 }
 
 // Numeric lanes, as in dradis' weather charts: one row per model, the day's value printed
@@ -842,6 +879,10 @@ $('city').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
 $('runBtn').addEventListener('click',run);
 $('allBtn').addEventListener('click',()=>selectModels(MODELS.map(m=>m.id)));
 $('defBtn').addEventListener('click',()=>selectModels(MODELS.filter(m=>m.def).map(m=>m.id)));
+try{ const v=parseFloat(localStorage.getItem('mb_rainTol')); if(v>=0) st.rainTol=v; }catch(e){}
+$('rainTol').value=st.rainTol;
+$('rainTol').addEventListener('input',e=>{ const v=parseFloat(String(e.target.value).replace(',','.'));
+  if(!(v>=0)) return; st.rainTol=v; try{ localStorage.setItem('mb_rainTol',String(v)); }catch(err){} if(st.data) renderPts(); });
 $('dayVar').addEventListener('change',()=>{ if(st.data) renderDay(); });
 let resizeT; window.addEventListener('resize',()=>{ clearTimeout(resizeT); resizeT=setTimeout(()=>{ if(st.data) renderDay(); },150); });
 try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ renderChips(); if(st.data) renderAll(); }); }catch(e){}

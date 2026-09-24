@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.7.0 — 24/09/2026
+- Classifica a punti: nuove colonne **Pioggia oraria** e **Pioggia a 3 ore**. Contano solo le ore (o i blocchi 00–03, 03–06…) in cui è piovuto o il modello prevedeva almeno 0,2 mm; 1 punto quando ha previsto pioggia ed è piovuto davvero. Con le stazioni meteo serve anche che la quantità prevista sia entro una **tolleranza in mm impostabile** sulla pagina (predefinita 1 mm, ricordata dal browser); per gli aeroporti conta solo sì/no.
+- La posizione in queste due colonne si basa sulla percentuale di punti sulle ore piovute o previste, così chi prevede sempre pioggia non viene premiato. Passando sopra i numeri si vedono falsi allarmi, ore mancate e prese fuori tolleranza.
+- L’ordine generale è la media dei piazzamenti in tutte le colonne disponibili.
+
 ## v1.6.0 — 24/09/2026
 - Oltre agli aeroporti, si possono scegliere le **stazioni meteo** entro 25 km dalla località: reti regionali ufficiali (ARPA, Protezione Civile, Meteotrentino, SIR Toscana…) e rete amatoriale MeteoNetwork, tramite MeteoHub – Agenzia ItaliaMeteo (CC-BY 4.0). Il menu le divide in gruppi e segna quelle «senza vento».
 - Per queste stazioni il periodo è limitato agli ultimi **7 giorni** (senza registrazione MeteoHub conserva 10 giorni). Di default resta proposto l’aeroporto più vicino.
