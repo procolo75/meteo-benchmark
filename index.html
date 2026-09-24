@@ -75,6 +75,7 @@ td{font-variant-numeric:tabular-nums}
 .na{color:var(--muted)}
 .rank{font-weight:700;width:28px}
 .best{font-weight:700}
+td.top{background:color-mix(in oklab, var(--s4) 30%, transparent)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink2);margin:4px 0 12px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend .ln{width:18px;height:0;border-top:3px solid var(--c,var(--obs));display:inline-block}
@@ -154,7 +155,7 @@ details li{margin:4px 0}
 
     <div class="card">
       <h2>Classifica a punti</h2>
-      <p class="hint" style="margin:0">Ora per ora, il modello prende <b>1 punto</b> quando la temperatura prevista è entro <b>1 °C</b> da quella misurata, e 1 punto quando il vento medio previsto è entro <b>5 km/h</b>. Giorno per giorno, prende 1 punto quando il <b>vento massimo</b> del giorno è entro <b>10 km/h</b> da quello misurato. Più punti è meglio; tra parentesi la percentuale sulle ore (o sui giorni) confrontati. Per la pioggia vale l’indice della classifica sopra. L’ordine è la media dei quattro piazzamenti; in grassetto il primo di ogni classifica.</p>
+      <p class="hint" style="margin:0">Ora per ora, il modello prende <b>1 punto</b> quando la temperatura prevista è entro <b>1 °C</b> da quella misurata, e 1 punto quando il vento medio previsto è entro <b>5 km/h</b>. Giorno per giorno, prende 1 punto quando il <b>vento massimo</b> del giorno è entro <b>10 km/h</b> da quello misurato. Più punti è meglio; tra parentesi la percentuale sulle ore (o sui giorni) confrontati. Per la pioggia vale l’indice della classifica sopra. L’ordine è la media dei quattro piazzamenti; evidenziato in giallo il migliore di ogni classifica.</p>
       <div class="tbl" style="margin-top:14px"><table id="ptsTbl"></table></div>
     </div>
 
@@ -534,7 +535,7 @@ function renderPts(){
   const rows=ids.map(id=>({id,score:(rT[id]&&rW[id]&&rX[id]&&rR[id])?(rT[id]+rW[id]+rX[id]+rR[id])/4:null}))
     .sort((a,b)=>(a.score??99)-(b.score??99));
   const pos=r=>r?`<span class="na">${r}°</span>`:'';
-  const cls=r=>r===1?' class="best"':'';
+  const cls=r=>r===1?' class="top"':'';
   const pct=x=>x?` <span class="na">su ${x.n} (${Math.round(x.pts/x.n*100)}%)</span>`:'';
   const pts=x=>x?x.pts+pct(x):'<span class="na">n.d.</span>';
   let p=0, prev=null;

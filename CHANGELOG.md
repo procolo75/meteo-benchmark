@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.3.2 — 24/09/2026
+- Classifica a punti: il migliore di ogni voce è evidenziato con lo sfondo giallo invece che in grassetto, per leggerlo più facilmente.
+
 ## v1.3.1 — 24/09/2026
 - Classifica a punti: il vento si divide in **vento medio** (ora per ora, soglia abbassata da 10 a 5 km/h, perché con 10 quasi tutti i modelli prendevano oltre il 90% dei punti) e **vento massimo** (giorno per giorno, 1 punto se il massimo del giorno è entro 10 km/h dal misurato). L’ordine è ora la media di quattro piazzamenti.
 
