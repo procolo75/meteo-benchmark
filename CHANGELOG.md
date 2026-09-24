@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.0 — 24/09/2026
+- **Tre schede: previsioni emesse 3, 2 o 1 giorno prima.** Per ogni modello si scaricano insieme le tre corse (una sola richiesta), così si passa da una scheda all’altra senza attese e si vede quanto i modelli migliorano avvicinandosi al giorno. La scheda scelta viene ricordata.
+- Titoli, spiegazioni e barra di stato seguono la scheda scelta. L’etichetta gialla di ItaliaMeteo ICON-2I compare solo a 3 giorni: a 2 e 1 giorno è confrontato alla pari.
+
 ## v1.9.1 — 24/09/2026
 - La casella della tolleranza sulla pioggia («Pioggia oraria e a 3 ore ± mm») è sempre visibile: con gli aeroporti, che non danno i millimetri, è disattivata e spiega perché.
 - «Pioggia indice» diventa **«Pioggia giornaliera»** in entrambe le classifiche e nelle spiegazioni, per distinguerla dalla pioggia oraria e a 3 ore.

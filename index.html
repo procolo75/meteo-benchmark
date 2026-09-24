@@ -93,7 +93,7 @@ details li{margin:4px 0}
 <body>
 <div class="wrap">
   <h1>Meteo Benchmark</h1>
-  <p class="sub">Quale modello meteo ha previsto meglio? Per ogni giorno del periodo scelto, la previsione emessa <b>3 giorni prima</b> (2 giorni per i modelli che non arrivano più lontano) viene confrontata ora per ora con i dati misurati in aeroporto o, per gli ultimi 7 giorni, in una stazione meteo regionale o MeteoNetwork.</p>
+  <p class="sub">Quale modello meteo ha previsto meglio? Per ogni giorno del periodo scelto, la previsione emessa <b>3, 2 o 1 giorno prima</b> (a scelta, per vedere quanto i modelli migliorano avvicinandosi al giorno) viene confrontata ora per ora con i dati misurati in aeroporto o, per gli ultimi 7 giorni, in una stazione meteo regionale o MeteoNetwork.</p>
 
   <div class="card">
     <div class="row">
@@ -126,8 +126,11 @@ details li{margin:4px 0}
 
   <div id="results" class="hidden">
     <div class="card">
-      <h2>Classifica a punti · previsioni emesse 3 giorni prima</h2>
-      <p class="hint" style="margin:0 0 4px">L’unico modello con l’etichetta gialla (<span class="tag">2 gg</span>) non prevede fino a 3 giorni: per lui si usa la previsione di 2 giorni prima, che è più facile. Tienine conto nel confronto.</p>
+      <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <h2>Classifica a punti · previsioni emesse <span data-lead></span></h2>
+        <div class="f"><span>Previsioni emesse</span><div class="seg" id="leadSeg"></div></div>
+      </div>
+      <p class="hint" style="margin:0 0 4px" id="leadNote">L’unico modello con l’etichetta gialla (<span class="tag">2 gg</span>) non prevede fino a 3 giorni: per lui si usa la previsione di 2 giorni prima, che è più facile. Tienine conto nel confronto.</p>
       <div class="meta" id="meta"></div>
       <div id="note"></div>
       <p class="hint" style="margin:12px 0 0">Ogni colonna è una piccola gara. <b>Temperatura</b> e <b>vento medio</b>: ora per ora, il modello prende 1 punto quando il valore previsto è entro la soglia da quello misurato. <b>Vento massimo</b>: giorno per giorno, 1 punto quando il massimo del giorno è entro la soglia. «<b>x su y</b>» vuol dire x punti su y ore (o giorni) confrontate; tra parentesi la percentuale. Le soglie si cambiano qui sotto e la classifica si aggiorna subito. La <b>pioggia giornaliera</b> è un indice da 0 a 1 calcolato giorno per giorno (spiegato nella classifica per errore); la <b>pioggia oraria e a 3 ore</b> guarda invece le singole ore, come spiegato qui sotto.</p>
@@ -145,9 +148,9 @@ details li{margin:4px 0}
           <li><b>Il punto.</b> 1 punto quando il modello ha previsto pioggia <i>ed</i> è piovuto davvero. Con le stazioni meteo, che misurano i millimetri, serve anche che la quantità prevista sia entro la tolleranza da quella misurata (per esempio ±1 mm); se no è una “presa fuori tolleranza” e non dà punto. Per gli aeroporti, che dicono solo se piove, basta che sia piovuto.</li>
           <li><b>Cosa sono x e y in «x su y».</b> x = ore prese (i punti). y = tutte le ore che contano: prese + fuori tolleranza + <span class="ko">falsi allarmi</span> (pioggia prevista, non caduta) + <span class="ko">mancate</span> (caduta, non prevista). Passando sopra il numero si vede il dettaglio.</li>
           <li><b>Esempio, pioggia oraria</b> (tolleranza ±1 mm). In una settimana alla stazione è piovuto in 5 ore; il modello aveva previsto pioggia in 6 ore. In 3 ore previsione e pioggia coincidono: in 2 la quantità è giusta entro 1 mm (2 punti), in 1 no (fuori tolleranza). Le altre 3 ore previste sono rimaste asciutte (3 falsi allarmi) e 2 ore di pioggia non erano previste (2 mancate). Ore che contano: 2 + 1 + 3 + 2 = 8. Risultato: <b>2 su 8 (25%)</b>.</li>
-          <li><b>Perché anche a 3 ore.</b> La giornata è divisa in blocchi 00–03, 03–06, 06–09… Un blocco è piovoso se in almeno una delle 3 ore è piovuto; è previsto piovoso se la pioggia prevista nelle 3 ore, sommata, arriva a 0,2 mm; la quantità confrontata è la somma delle 3 ore. Serve a non punire un modello che prevede la pioggia giusta con un’ora di anticipo o di ritardo, cosa frequente a 3 giorni. Esempio: piovono 2,4 mm tra le 10 e le 11, il modello ne prevede 2,0 tra le 11 e le 12. Ora per ora sono una mancata (10–11) e un falso allarme (11–12): 0 su 2. Nel blocco 09–12 invece coincidono, e 2,0 contro 2,4 mm è entro ±1 mm: 1 su 1.</li>
+          <li><b>Perché anche a 3 ore.</b> La giornata è divisa in blocchi 00–03, 03–06, 06–09… Un blocco è piovoso se in almeno una delle 3 ore è piovuto; è previsto piovoso se la pioggia prevista nelle 3 ore, sommata, arriva a 0,2 mm; la quantità confrontata è la somma delle 3 ore. Serve a non punire un modello che prevede la pioggia giusta con un’ora di anticipo o di ritardo, cosa frequente con qualche giorno di anticipo. Esempio: piovono 2,4 mm tra le 10 e le 11, il modello ne prevede 2,0 tra le 11 e le 12. Ora per ora sono una mancata (10–11) e un falso allarme (11–12): 0 su 2. Nel blocco 09–12 invece coincidono, e 2,0 contro 2,4 mm è entro ±1 mm: 1 su 1.</li>
           <li><b>La posizione</b> si basa sulla percentuale, non sui punti: chi prevede pioggia a ogni ora prenderebbe tutte le ore piovose, ma con decine di falsi allarmi la sua percentuale crolla (per esempio 5 su 168, cioè 3%). A parità di percentuale conta chi ha più punti.</li>
-          <li><b>Numeri bassi sono normali.</b> Azzeccare l’ora esatta della pioggia 3 giorni prima è difficile: 10–30% è già un buon risultato, e con pochi episodi di pioggia nel periodo la classifica è solo indicativa. “Nessuna pioggia” vuol dire che nel periodo non è piovuto e il modello non l’ha prevista.</li>
+          <li><b>Numeri bassi sono normali.</b> Azzeccare l’ora esatta della pioggia giorni prima è difficile: 10–30% è già un buon risultato, e con pochi episodi di pioggia nel periodo la classifica è solo indicativa. “Nessuna pioggia” vuol dire che nel periodo non è piovuto e il modello non l’ha prevista.</li>
         </ul>
       </details>
       <p class="hint" style="margin:8px 0 0">L’ordine è la media dei piazzamenti in tutte le colonne disponibili; evidenziato in giallo il migliore di ogni classifica. Clicca sull’intestazione di una colonna per ordinare la tabella in base a quella (di nuovo per invertire, su # per tornare all’ordine della classifica).</p>
@@ -181,7 +184,7 @@ details li{margin:4px 0}
       <div class="row" style="justify-content:space-between">
         <div>
           <h2>Giorno per giorno</h2>
-          <p class="hint" style="margin:0">Per ogni giorno: il valore misurato e quello che ogni modello prevedeva 3 giorni prima (meno per i modelli con l’etichetta gialla).</p>
+          <p class="hint" style="margin:0">Per ogni giorno: il valore misurato e quello che ogni modello prevedeva <span data-lead></span> (meno per i modelli con l’etichetta gialla).</p>
         </div>
         <div class="row">
         <div class="f"><span>Mostra</span><div class="seg" id="dayModeSeg"></div></div>
@@ -204,14 +207,14 @@ details li{margin:4px 0}
       <details>
         <summary>Fonti e metodo</summary>
         <ul>
-          <li><b>Previsioni:</b> Open-Meteo, archivio delle corse passate dei modelli (Previous Runs API). Per ogni ora si usa il valore previsto dalla corsa di 3 giorni (72 ore) prima. Le previsioni sono calcolate sulle coordinate della stazione, non del centro città.</li>
+          <li><b>Previsioni:</b> Open-Meteo, archivio delle corse passate dei modelli (Previous Runs API). Per ogni ora si usa il valore previsto dalla corsa di 3, 2 o 1 giorno (72, 48 o 24 ore) prima, a seconda della scheda scelta sopra la classifica a punti. Le previsioni sono calcolate sulle coordinate della stazione, non del centro città.</li>
           <li><b>Misure:</b> bollettini meteo degli aeroporti (METAR, Aeronautica Militare/ENAV), dall’archivio dell’Iowa Environmental Mesonet. Di solito c’è una misura ogni 30 minuti; la temperatura è arrotondata al grado.</li>
           <li><b>Stazioni meteo (ultimi 7 giorni):</b> reti regionali ufficiali (ARPA, Protezione Civile) e rete amatoriale MeteoNetwork, tramite <a href="https://meteohub.agenziaitaliameteo.it/" target="_blank" rel="noopener">MeteoHub – Agenzia ItaliaMeteo</a>, licenza CC-BY 4.0. Misure ogni 10 minuti, pioggia in millimetri; ora piovosa o giorno piovoso se ≥ 0,2 mm. Senza registrazione MeteoHub conserva solo gli ultimi 10 giorni, per questo il periodo è limitato a 7. Non coperte: Valle d’Aosta, Abruzzo e quasi tutto il Lazio.</li>
           <li><b>Abbinamento orario:</b> a ogni ora si associa la misura più vicina (entro ±30 minuti). Per la pioggia si guarda l’ora precedente, come nel dato del modello.</li>
           <li><b>Ore della pioggia:</b> il valore di pioggia di un’ora (per esempio le 11:00) è quella caduta nell’ora precedente (10–11), sia nei modelli sia nelle misure; il totale di un giorno va dalle 00 alle 24. Temperatura e vento sono invece i valori a quell’ora.</li>
           <li><b>Pioggia (aeroporti):</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Quindi si verifica solo sì/no. Giorno piovoso previsto se ≥ 0,5 mm; nel grafico orario, ora piovosa se ≥ 0,1 mm.</li>
           <li><b>Vento:</b> intensità media a 10 m; nodi convertiti in km/h (×1,852).</li>
-          <li><b>Modelli a corto raggio:</b> ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la sua corsa di 2 giorni (48 ore) prima. Parte avvantaggiato ed è segnato con l’etichetta gialla.</li>
+          <li><b>Modelli a corto raggio:</b> ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: nella scheda «3 giorni prima» si usa la sua corsa di 2 giorni (48 ore) prima, parte avvantaggiato ed è segnato con l’etichetta gialla. Nelle schede a 2 e 1 giorno gioca alla pari.</li>
           <li>Orari nel fuso di Roma. Periodo = ultimi giorni completi (oggi escluso).</li>
         </ul>
       </details>
@@ -221,7 +224,7 @@ details li{margin:4px 0}
 
 <script>
 // ---------- Configuration ----------
-const LEAD = 3;   // days between forecast issue and verified day (models with a shorter range use their own `lead`)
+const LEADS = [3,2,1];   // selectable days between forecast issue and verified day (models with a shorter range stop at their own `lead`)
 // One seamless mix per family (Open-Meteo picks the finest component for each place and lead time),
 // the AI models, plus ECMWF IFS (no seamless mix exists) and ItaliaMeteo ICON-2I.
 // At 3 days in Italy each seamless mix equals one of its components (checked 09/2026), so the components are left out;
@@ -285,16 +288,18 @@ const STATIONS = [["LIBA","Amendola",41.5381,15.7139,60],["LIBC","Crotone",38.99
 const st = {
   stations:STATIONS, place:null, stationList:[], station:null,
   active:new Set(MODELS.filter(m=>m.def).map(m=>m.id)),
-  slot:{}, data:null, tol:{...TOL_DEF}, sort:{}, dayMode:'val'
+  slot:{}, data:null, datas:null, lead:LEADS[0], tol:{...TOL_DEF}, sort:{}, dayMode:'val'
 };
 
 // ---------- Helpers ----------
 const $ = id => document.getElementById(id);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const mdef = id => MODELS.find(m=>m.id===id);
-const mlead = id => mdef(id).lead || LEAD;
-const mlabel = id => mdef(id).label + (mlead(id)!==LEAD ? ` (${mlead(id)} gg)` : '');
-const mname = id => mdef(id).label + (mlead(id)!==LEAD ? ` <span class="tag">${mlead(id)} gg</span>` : '');
+const mmax = id => mdef(id).lead || LEADS[0];
+const mlead = id => Math.min(st.lead, mmax(id));
+const mlabel = id => mdef(id).label + (mlead(id)!==st.lead ? ` (${mlead(id)} gg)` : '');
+const mname = id => mdef(id).label + (mlead(id)!==st.lead ? ` <span class="tag">${mlead(id)} gg</span>` : '');
+const leadTxt = L => L===1 ? '1 giorno prima' : `${L} giorni prima`;
 const mcolor = id => css('--s'+(st.slot[id]%NCOL+1));
 const mstyle = id => Math.floor(st.slot[id]/NCOL);   // 0 solid, 1 dashed, 2 dotted
 const mdot = id => `<span class="dot${mstyle(id)?' s'+mstyle(id):''}" style="--c:${mcolor(id)}"></span>`;
@@ -518,9 +523,10 @@ async function fetchObsMH(s,days){
   out.sort((a,b)=>a.t-b.t); return out;
 }
 
+// One request per model for every lead it reaches (1, 2, 3 days), so switching tab needs no new download
 async function fetchModel(id,sd,ed,lat,lon){
-  const L=mlead(id);
-  const vars=[`temperature_2m_previous_day${L}`,`wind_speed_10m_previous_day${L}`,`precipitation_previous_day${L}`];
+  const Ls=LEADS.filter(L=>L<=mmax(id));
+  const vars=Ls.flatMap(L=>[`temperature_2m_previous_day${L}`,`wind_speed_10m_previous_day${L}`,`precipitation_previous_day${L}`]);
   const u=`https://previous-runs-api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${vars.join(',')}&models=${id}&start_date=${sd}&end_date=${ed}&timezone=Europe%2FRome&wind_speed_unit=kmh`;
   try{
     let j;
@@ -530,10 +536,11 @@ async function fetchModel(id,sd,ed,lat,lon){
       await new Promise(r=>setTimeout(r,1200*attempt));   // Open-Meteo rate limit: wait and retry
     }
     if(j.error) return {ok:false,err:j.reason};
-    const h=j.hourly;
-    const t=h[vars[0]], w=h[vars[1]], p=h[vars[2]];
-    if(!t || t.every(v=>v==null)) return {ok:false,err:`nessuna previsione a ${L} giorni`};
-    return {ok:true,time:h.time,t,w,p};
+    const h=j.hourly, by={};
+    Ls.forEach(L=>{ const t=h[`temperature_2m_previous_day${L}`];
+      by[L]= !t||t.every(v=>v==null) ? {ok:false,err:`nessuna previsione a ${L} ${L===1?'giorno':'giorni'}`}
+        : {ok:true,time:h.time,t,w:h[`wind_speed_10m_previous_day${L}`],p:h[`precipitation_previous_day${L}`]}; });
+    return {ok:true,by};
   }catch(e){ return {ok:false,err:e.message}; }
 }
 
@@ -554,15 +561,16 @@ async function run(){
     const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],ymd(new Date(tms(days[days.length-1])+24*HOUR)),s.lat.toFixed(4),s.lon.toFixed(4));
       done++; setStatus(`Scarico le previsioni… ${done}/${MODELS.length} modelli`); return r; });
     const [obsRaw, fcs]=await Promise.all([ s.src==='mh' ? fetchObsMH(s,days) : fetchObs(s.sid,start,end), pool(tasks,3) ]);
-    const fc={}; MODELS.forEach((m,i)=>fc[m.id]=fcs[i]);
+    // forecasts per lead; a model that does not reach L days uses its longest lead (yellow tag)
+    const fcBy={}; LEADS.forEach(L=>{ fcBy[L]={}; MODELS.forEach((m,i)=>{ const r=fcs[i];
+      fcBy[L][m.id]= r.ok ? r.by[Math.min(L,mmax(m.id))] : r; }); });
     const inPeriod=obsRaw.filter(o=>days.includes(o.s.slice(0,10))); inPeriod.noRain=obsRaw.noRain;
     if(inPeriod.length<20) throw new Error(`poche o nessuna misura disponibile per ${s.src==='mh'?s.name:s.sid} nel periodo`);
-    if(!Object.values(fc).some(f=>f.ok)) throw new Error('nessun modello ha risposto: riprova tra un minuto');
-    st.data=buildData(days,inPeriod,fc); st.data.station=s;
-    const failed=MODELS.filter(m=>!fc[m.id].ok).map(m=>mlabel(m.id));
-    setStatus(`Fatto: ${inPeriod.length} ${s.src==='mh'?'misure della stazione':'bollettini dell’aeroporto'}, ${MODELS.length-failed.length} modelli con dati.`+(failed.length?` Non disponibili qui: ${failed.join(', ')}.`:''));
+    if(!LEADS.some(L=>Object.values(fcBy[L]).some(f=>f.ok))) throw new Error('nessun modello ha risposto: riprova tra un minuto');
+    st.datas={}; LEADS.forEach(L=>{ if(Object.values(fcBy[L]).some(f=>f.ok)){ st.datas[L]=buildData(days,inPeriod,fcBy[L]); st.datas[L].station=s; st.datas[L].nObs=inPeriod.length; } });
+    if(!st.datas[st.lead]) st.lead=+Object.keys(st.datas).sort().pop();
     $('results').classList.remove('hidden');
-    renderChips(); renderAll();
+    showLead();
   }catch(e){ setStatus('Errore: '+e.message,true); }
   $('runBtn').disabled=false;
 }
@@ -636,6 +644,20 @@ function buildData(days,obs,fc){
 }
 
 // ---------- Rendering ----------
+// the selected lead: pick its dataset, refresh texts, status and every table
+function showLead(){
+  st.data=st.datas[st.lead];
+  document.querySelectorAll('[data-lead]').forEach(e=>e.textContent=leadTxt(st.lead));
+  $('leadNote').classList.toggle('hidden',!MODELS.some(m=>mmax(m.id)<st.lead));
+  const seg=$('leadSeg'); seg.innerHTML='';
+  LEADS.forEach(L=>{ const b=document.createElement('button'); b.type='button'; b.textContent=leadTxt(L);
+    b.className=st.lead===L?'on':''; b.disabled=!st.datas[L];
+    b.addEventListener('click',()=>{ st.lead=L; try{ localStorage.setItem('mb_lead',String(L)); }catch(e){} showLead(); });
+    seg.appendChild(b); });
+  const D=st.data, s=D.station, failed=MODELS.filter(m=>!D.fc[m.id].ok).map(m=>mlabel(m.id));
+  setStatus(`Fatto: ${D.nObs} ${s.src==='mh'?'misure della stazione':'bollettini dell’aeroporto'}, ${MODELS.length-failed.length} modelli con dati per le previsioni emesse ${leadTxt(st.lead)}.`+(failed.length?` Non disponibili: ${failed.join(', ')}.`:''));
+  renderChips(); renderAll();
+}
 function renderAll(){ renderMeta(); renderRank(); renderPts(); renderDayMode(); renderDay(); }
 function activeOk(){ return MODELS.filter(m=>st.active.has(m.id) && st.data.fc[m.id].ok).map(m=>m.id); }
 
@@ -870,6 +892,7 @@ $('allBtn').addEventListener('click',()=>selectModels(MODELS.map(m=>m.id)));
 $('defBtn').addEventListener('click',()=>selectModels(MODELS.filter(m=>m.def).map(m=>m.id)));
 // settable thresholds of the points ranking, remembered by the browser
 const TOL_IN={t:'tolT', w:'tolW', wx:'tolWX', r:'tolR'};
+try{ const v=+localStorage.getItem('mb_lead'); if(LEADS.includes(v)) st.lead=v; }catch(e){}
 try{ const v=JSON.parse(localStorage.getItem('mb_tol')||'{}'); for(const k in TOL_DEF) if(v[k]>=0) st.tol[k]=v[k]; }catch(e){}
 function showTol(){ for(const k in TOL_IN) $(TOL_IN[k]).value=st.tol[k]; }
 function saveTol(){ try{ localStorage.setItem('mb_tol',JSON.stringify(st.tol)); }catch(e){} if(st.data) renderPts(); }

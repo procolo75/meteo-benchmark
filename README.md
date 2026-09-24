@@ -2,7 +2,7 @@
 
 **Sito online:** https://procolo75.github.io/meteo-benchmark/
 
-Quale modello meteo prevede meglio nella tua città? Scegli una località italiana e la pagina confronta, giorno per giorno, le previsioni emesse **3 giorni prima** dai principali modelli meteo con i dati realmente misurati nell’aeroporto più vicino o, per gli ultimi 7 giorni, in una stazione meteo regionale o MeteoNetwork. Funziona interamente nel browser, senza installazioni e senza server.
+Quale modello meteo prevede meglio nella tua città? Scegli una località italiana e la pagina confronta, giorno per giorno, le previsioni emesse **3, 2 o 1 giorno prima** (a scelta) dai principali modelli meteo con i dati realmente misurati nell’aeroporto più vicino o, per gli ultimi 7 giorni, in una stazione meteo regionale o MeteoNetwork. Funziona interamente nel browser, senza installazioni e senza server.
 
 ---
 
@@ -10,7 +10,7 @@ Quale modello meteo prevede meglio nella tua città? Scegli una località italia
 
 1. Cerchi una località italiana (ricerca per nome, via geocoding Open-Meteo).
 2. La pagina propone l’**aeroporto con bollettino METAR più vicino** e, in alternativa, le **stazioni meteo** entro 25 km: reti regionali ufficiali e rete amatoriale MeteoNetwork. Scarica le misure reali della stazione scelta.
-3. Per ogni ora del periodo scarica il valore che ciascun modello **aveva previsto 3 giorni prima** (non la previsione di oggi: l’archivio delle corse passate).
+3. Per ogni ora del periodo scarica il valore che ciascun modello **aveva previsto 3, 2 e 1 giorno prima** (non la previsione di oggi: l’archivio delle corse passate). Tre schede sopra la classifica a punti permettono di passare dall’una all’altra senza nuovi download, per vedere quanto i modelli migliorano avvicinandosi al giorno.
 4. Confronta previsto vs misurato e stila tre classifiche — temperatura, vento, pioggia — riunite in un’unica tabella ordinata.
 
 Il confronto è alla pari: le previsioni sono richieste sulle **coordinate dell’aeroporto**, non del centro città, così tutti i modelli vengono valutati sullo stesso punto in cui si misura.
@@ -48,13 +48,13 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 
 Attivi di default (tutti): ECMWF IFS 0,25°, ECMWF IFS 9 km, ECMWF AIFS (IA), DWD ICON seamless, ItaliaMeteo ICON-2I, NOAA GFS seamless, NOAA AIGFS (IA), Météo-France seamless, UK Met Office seamless, GEM Canada seamless. Ognuno si può spegnere; **Tutti** e **Predefiniti** li riaccendono. Oltre l’ottavo modello i colori si ripetono con linea tratteggiata.
 
-**Cosa sono i *seamless*.** Ogni ente meteo ha più modelli: uno globale (tutta la Terra, meno dettaglio), uno regionale (per esempio l’Europa, più dettaglio) e a volte uno locale ancora più fine che prevede solo 1–2 giorni. Il *seamless* è una combinazione fatta da Open-Meteo: per ogni luogo e ogni ora usa il modello più dettagliato che copre quel punto a quella distanza di tempo, e passa al successivo quando quello si ferma. Per questo di ogni famiglia c’è solo il seamless, non i singoli componenti. A 3 giorni di anticipo, in Italia, i modelli locali non arrivano più e ogni seamless coincide con un solo componente (ICON con ICON-EU, Météo-France con ARPEGE Europa, GFS, UK Met Office e GEM con il rispettivo globale).
+**Cosa sono i *seamless*.** Ogni ente meteo ha più modelli: uno globale (tutta la Terra, meno dettaglio), uno regionale (per esempio l’Europa, più dettaglio) e a volte uno locale ancora più fine che prevede solo 1–2 giorni. Il *seamless* è una combinazione fatta da Open-Meteo: per ogni luogo e ogni ora usa il modello più dettagliato che copre quel punto a quella distanza di tempo, e passa al successivo quando quello si ferma. Per questo di ogni famiglia c’è solo il seamless, non i singoli componenti. A 3 giorni di anticipo, in Italia, i modelli locali non arrivano più e ogni seamless coincide con un solo componente (ICON con ICON-EU, Météo-France con ARPEGE Europa, GFS, UK Met Office e GEM con il rispettivo globale). A 1–2 giorni il seamless può invece usare anche i modelli locali dove coprono (per esempio ICON-D2 al Nord).
 
 **Best match** (la scelta automatica di Open-Meteo per il luogo) non è in elenco: in tutta Italia dà gli stessi valori di DWD ICON seamless (verificato su 10 città, da Bolzano a Lampedusa).
 
 ECMWF non ha un seamless: ci sono le due versioni di IFS (griglia 0,25° e 9 km) e AIFS, la versione a intelligenza artificiale. KNMI, DMI e MET Norway seamless in Italia danno gli stessi valori di ECMWF IFS 9 km e non sono in elenco.
 
-ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la previsione di 2 giorni prima ed è segnato con un’etichetta gialla. Un anticipo minore rende la previsione più facile: nel leggere la classifica va tenuto conto che non gioca alla pari.
+ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: nella scheda «3 giorni prima» si usa la sua previsione di 2 giorni prima ed è segnato con un’etichetta gialla (un anticipo minore rende la previsione più facile, quindi lì non gioca alla pari). Nelle schede a 2 e 1 giorno è confrontato alla pari con gli altri.
 
 Se un modello non copre la località scelta, viene escluso dal confronto e indicato nella barra di stato.
 
