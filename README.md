@@ -36,8 +36,8 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 
 ## Cosa mostra la pagina
 
-- **Classifica dei modelli**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
 - **Classifica a punti**: ora per ora il modello prende 1 punto se la temperatura prevista è entro ±1 °C da quella misurata e 1 punto se il vento medio è entro ±5 km/h; giorno per giorno, 1 punto se il vento massimo del giorno è entro ±10 km/h; per la pioggia resta l’indice. Per ognuna delle quattro voci c’è la posizione, e i modelli sono ordinati per media dei piazzamenti.
+- **Classifica per errore**: errore medio, minimo e massimo per temperatura e vento, indice pioggia, con il valore migliore evidenziato e un avviso automatico quando il periodo scelto è troppo breve per essere significativo.
 - **Giorno per giorno**, a corsie numeriche: una riga per modello con il valore di ogni giorno stampato nel colore del modello, sotto la riga del misurato. Si può vedere il valore previsto o l’errore (previsto − misurato; per la pioggia ✓ presa, FA falso allarme, M mancata). Accanto al nome, l’errore medio o l’indice pioggia del periodo.
 - **Grafico ora per ora**, con selettore della grandezza: temperatura massima, temperatura minima, vento medio, vento massimo, pioggia.
 - **Periodo selezionabile**: ultimi 7, 14 o 30 giorni (default 30).
@@ -46,18 +46,13 @@ I modelli sono **ordinati** per media dei piazzamenti nelle tre classifiche, e i
 
 Attivi di default: Open-Meteo Best match, ECMWF IFS 0,25°, ECMWF AIFS (IA), DWD ICON seamless, ItaliaMeteo ICON-2I, NOAA GFS seamless, Météo-France seamless, UK Met Office seamless, GEM Canada seamless.
 
-Attivabili dall’utente: ECMWF IFS 9 km, DWD ICON globale, Météo-France ARPEGE globale, NOAA AIGFS (IA), JMA Giappone seamless, CMA Cina, MeteoSwiss ICON seamless (Nord Italia), DWD ICON-D2 (Nord Italia).
+Attivabili dall’utente: ECMWF IFS 9 km, DWD ICON globale, DWD ICON Europa, NOAA GFS globale, NOAA AIGFS (IA), Météo-France ARPEGE globale, Météo-France ARPEGE Europa, UK Met Office globale, GEM Canada globale.
 
-Si possono attivare tutti insieme (pulsante **Tutti**; **Predefiniti** torna alla selezione iniziale). Oltre l’ottavo modello i colori si ripetono con linea tratteggiata e poi puntinata.
+Per ogni famiglia ci sono il *seamless* e i suoi componenti globale ed europeo, dove esistono, più la versione IA quando c’è. Si possono attivare tutti insieme (pulsante **Tutti**; **Predefiniti** torna alla selezione iniziale). Oltre l’ottavo modello i colori si ripetono con linea tratteggiata e poi puntinata.
 
-Nota sui *seamless*: a 3 giorni di anticipo, in Italia, alcuni coincidono con un solo modello. **Best match** dà gli stessi valori di DWD ICON seamless (ICON-EU); KNMI, DMI e MET Norway seamless danno gli stessi valori di ECMWF IFS 9 km e per questo non sono in elenco.
+Nota sui *seamless*: a 3 giorni di anticipo, in Italia, ciascuno coincide con uno dei suoi componenti, quindi in classifica compaiono a pari merito. **Best match** e DWD ICON seamless danno gli stessi valori di ICON Europa; Météo-France seamless di ARPEGE Europa; NOAA GFS, UK Met Office e GEM seamless dei rispettivi globali. KNMI, DMI e MET Norway seamless danno gli stessi valori di ECMWF IFS 9 km e non sono in elenco.
 
-I modelli ad alta risoluzione che non arrivano a 3 giorni sono inclusi con il loro anticipo massimo e segnati con un’etichetta gialla:
-
-- **ItaliaMeteo ICON-2I**: previsione di 2 giorni prima
-- **DWD ICON-D2** (solo Nord Italia): previsione di 1 giorno prima
-
-Un anticipo minore rende la previsione più facile: nel leggere la classifica va tenuto conto che questi modelli non giocano alla pari.
+ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la previsione di 2 giorni prima ed è segnato con un’etichetta gialla. Un anticipo minore rende la previsione più facile: nel leggere la classifica va tenuto conto che questi modelli non giocano alla pari.
 
 Se un modello non copre la località scelta, viene escluso dal confronto e indicato nella barra di stato.
 

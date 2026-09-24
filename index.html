@@ -129,10 +129,16 @@ details li{margin:4px 0}
 
   <div id="results" class="hidden">
     <div class="card">
-      <h2>Classifica dei modelli · previsioni emesse 3 giorni prima</h2>
-      <p class="hint" style="margin:0">I modelli con l’etichetta gialla (<span class="tag">2 gg</span>, <span class="tag">1 gg</span>) non prevedono fino a 3 giorni: per loro si usa la previsione di 2 (o 1) giorni prima, che è più facile. Tienine conto nel confronto.</p>
+      <h2>Classifica a punti · previsioni emesse 3 giorni prima</h2>
+      <p class="hint" style="margin:0 0 4px">L’unico modello con l’etichetta gialla (<span class="tag">2 gg</span>) non prevede fino a 3 giorni: per lui si usa la previsione di 2 giorni prima, che è più facile. Tienine conto nel confronto.</p>
       <div class="meta" id="meta"></div>
       <div id="note"></div>
+      <p class="hint" style="margin:12px 0 0">Ora per ora, il modello prende <b>1 punto</b> quando la temperatura prevista è entro <b>1 °C</b> da quella misurata, e 1 punto quando il vento medio previsto è entro <b>5 km/h</b>. Giorno per giorno, prende 1 punto quando il <b>vento massimo</b> del giorno è entro <b>10 km/h</b> da quello misurato. Più punti è meglio; tra parentesi la percentuale sulle ore (o sui giorni) confrontati. Per la pioggia vale l’indice spiegato nella classifica per errore, qui sotto. L’ordine è la media dei quattro piazzamenti; evidenziato in giallo il migliore di ogni classifica.</p>
+      <div class="tbl" style="margin-top:14px"><table id="ptsTbl"></table></div>
+    </div>
+
+    <div class="card">
+      <h2>Classifica per errore</h2>
       <div class="tbl" style="margin-top:14px"><table id="rankTbl"></table></div>
       <details open style="margin-top:12px">
         <summary>Come leggere la tabella</summary>
@@ -151,12 +157,6 @@ details li{margin:4px 0}
           <li><b>Posizione</b>: media dei piazzamenti nelle classifiche di temperatura, vento e pioggia (indice). Con pochi giorni di pioggia nel periodo, la parte pioggia è meno affidabile: meglio usare 30 giorni.</li>
         </ul>
       </details>
-    </div>
-
-    <div class="card">
-      <h2>Classifica a punti</h2>
-      <p class="hint" style="margin:0">Ora per ora, il modello prende <b>1 punto</b> quando la temperatura prevista è entro <b>1 °C</b> da quella misurata, e 1 punto quando il vento medio previsto è entro <b>5 km/h</b>. Giorno per giorno, prende 1 punto quando il <b>vento massimo</b> del giorno è entro <b>10 km/h</b> da quello misurato. Più punti è meglio; tra parentesi la percentuale sulle ore (o sui giorni) confrontati. Per la pioggia vale l’indice della classifica sopra. L’ordine è la media dei quattro piazzamenti; evidenziato in giallo il migliore di ogni classifica.</p>
-      <div class="tbl" style="margin-top:14px"><table id="ptsTbl"></table></div>
     </div>
 
     <div class="card">
@@ -205,7 +205,7 @@ details li{margin:4px 0}
           <li><b>Abbinamento orario:</b> a ogni ora si associa la misura più vicina (entro ±30 minuti). Per la pioggia si guarda l’ora precedente, come nel dato del modello.</li>
           <li><b>Pioggia:</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Quindi si verifica solo sì/no. Giorno piovoso previsto se ≥ 0,5 mm; nel grafico orario, ora piovosa se ≥ 0,1 mm.</li>
           <li><b>Vento:</b> intensità media a 10 m; nodi convertiti in km/h (×1,852).</li>
-          <li><b>Modelli a corto raggio:</b> quelli ad alta risoluzione non arrivano a 3 giorni. Per ItaliaMeteo ICON-2I si usa la corsa di 2 giorni (48 ore) prima, per DWD ICON-D2 quella di 1 giorno prima (l’archivio non ha di più). Partono avvantaggiati e sono segnati con l’etichetta gialla.</li>
+          <li><b>Modelli a corto raggio:</b> ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la sua corsa di 2 giorni (48 ore) prima. Parte avvantaggiato ed è segnato con l’etichetta gialla.</li>
           <li>Orari nel fuso di Roma. Periodo = ultimi giorni completi (oggi escluso).</li>
         </ul>
       </details>
@@ -216,8 +216,9 @@ details li{margin:4px 0}
 <script>
 // ---------- Configuration ----------
 const LEAD = 3;   // days between forecast issue and verified day (models with a shorter range use their own `lead`)
-// At 3 days in Italy several "seamless" mixes collapse onto one component (checked 09/2026):
-// best_match = ICON seamless = ICON-EU; KNMI, DMI and MET Norway seamless = ECMWF IFS 9 km; so those three are left out.
+// Each family lists its seamless mix next to its global, European and AI components.
+// At 3 days in Italy the seamless mixes collapse onto one component (checked 09/2026): best_match = ICON seamless = ICON-EU,
+// GFS / ARPEGE / UKMO / GEM seamless = their global (Europe for ARPEGE) run; KNMI, DMI and MET Norway seamless = ECMWF IFS 9 km.
 const MODELS = [
   {id:'best_match',            label:'Open-Meteo Best match',  def:true},
   {id:'ecmwf_ifs025',          label:'ECMWF IFS 0,25°',        def:true},
@@ -225,17 +226,18 @@ const MODELS = [
   {id:'ecmwf_aifs025_single',  label:'ECMWF AIFS (IA)',        def:true},
   {id:'icon_seamless',         label:'DWD ICON seamless',      def:true},
   {id:'icon_global',           label:'DWD ICON globale',       def:false},
+  {id:'icon_eu',               label:'DWD ICON Europa',        def:false},
   {id:'italia_meteo_arpae_icon_2i', label:'ItaliaMeteo ICON-2I', def:true, lead:2},
   {id:'gfs_seamless',          label:'NOAA GFS seamless',      def:true},
+  {id:'gfs_global',            label:'NOAA GFS globale',       def:false},
+  {id:'ncep_aigfs025',         label:'NOAA AIGFS (IA)',        def:false},
   {id:'meteofrance_seamless',  label:'Météo-France seamless',  def:true},
   {id:'meteofrance_arpege_world', label:'Météo-France ARPEGE globale', def:false},
+  {id:'meteofrance_arpege_europe', label:'Météo-France ARPEGE Europa', def:false},
   {id:'ukmo_seamless',         label:'UK Met Office seamless', def:true},
+  {id:'ukmo_global_deterministic_10km', label:'UK Met Office globale', def:false},
   {id:'gem_seamless',          label:'GEM Canada seamless',    def:true},
-  {id:'ncep_aigfs025',         label:'NOAA AIGFS (IA)',        def:false},
-  {id:'jma_seamless',          label:'JMA Giappone seamless',  def:false},
-  {id:'cma_grapes_global',     label:'CMA Cina',               def:false},
-  {id:'meteoswiss_icon_seamless', label:'MeteoSwiss ICON seamless (Nord)', def:false},
-  {id:'icon_d2',               label:'DWD ICON-D2 (Nord)',     def:false, lead:1},
+  {id:'gem_global',            label:'GEM Canada globale',     def:false},
 ];
 const NCOL = 8;   // palette size: beyond it colours repeat with a dashed, then dotted line
 const KT2KMH = 1.852;

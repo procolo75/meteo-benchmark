@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4.0 — 24/09/2026
+- La **Classifica a punti** è ora la prima tabella, con città, stazione e periodo; la classifica principale diventa «Classifica per errore» e segue.
+- Tolti JMA Giappone, CMA Cina, MeteoSwiss ICON seamless e DWD ICON-D2.
+- Per ogni famiglia, accanto al seamless ci sono ora il globale e l’europeo (dove esistono): aggiunti DWD ICON Europa, NOAA GFS globale, Météo-France ARPEGE Europa, UK Met Office globale, GEM Canada globale. A 3 giorni in Italia i seamless coincidono con uno di questi e risultano a pari merito.
+
 ## v1.3.2 — 24/09/2026
 - Classifica a punti: il migliore di ogni voce è evidenziato con lo sfondo giallo invece che in grassetto, per leggerlo più facilmente.
 
