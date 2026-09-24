@@ -2,14 +2,14 @@
 
 **Sito online:** https://procolo75.github.io/meteo-benchmark/
 
-Quale modello meteo prevede meglio nella tua città? Scegli una località italiana e la pagina confronta, giorno per giorno, le previsioni emesse **3 giorni prima** dai principali modelli meteo con i dati realmente misurati nell’aeroporto più vicino. Funziona interamente nel browser, senza installazioni e senza server.
+Quale modello meteo prevede meglio nella tua città? Scegli una località italiana e la pagina confronta, giorno per giorno, le previsioni emesse **3 giorni prima** dai principali modelli meteo con i dati realmente misurati nell’aeroporto più vicino o, per gli ultimi 7 giorni, in una stazione meteo regionale o MeteoNetwork. Funziona interamente nel browser, senza installazioni e senza server.
 
 ---
 
 ## Come funziona
 
 1. Cerchi una località italiana (ricerca per nome, via geocoding Open-Meteo).
-2. La pagina individua l’**aeroporto con bollettino METAR più vicino** e ne scarica le misure reali.
+2. La pagina propone l’**aeroporto con bollettino METAR più vicino** e, in alternativa, le **stazioni meteo** entro 25 km: reti regionali ufficiali e rete amatoriale MeteoNetwork. Scarica le misure reali della stazione scelta.
 3. Per ogni ora del periodo scarica il valore che ciascun modello **aveva previsto 3 giorni prima** (non la previsione di oggi: l’archivio delle corse passate).
 4. Confronta previsto vs misurato e stila tre classifiche — temperatura, vento, pioggia — riunite in un’unica tabella ordinata.
 
@@ -59,7 +59,8 @@ Se un modello non copre la località scelta, viene escluso dal confronto e indic
 ## Fonti dei dati
 
 - **Previsioni:** [Open-Meteo – Previous Runs API](https://open-meteo.com/en/docs/previous-runs-api), l’archivio delle corse passate dei modelli (dal 2024).
-- **Misure:** bollettini METAR degli aeroporti italiani (Aeronautica Militare / ENAV), dall’archivio dell’[Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/request/download.phtml?network=IT__ASOS).
+- **Misure (aeroporti):** bollettini METAR degli aeroporti italiani (Aeronautica Militare / ENAV), dall’archivio dell’[Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/request/download.phtml?network=IT__ASOS).
+- **Misure (stazioni meteo):** reti regionali ufficiali (ARPA, Protezione Civile, Meteotrentino, SIR Toscana…) e rete amatoriale [MeteoNetwork](https://www.meteonetwork.it/), tramite [MeteoHub – Agenzia ItaliaMeteo](https://meteohub.agenziaitaliameteo.it/), licenza CC-BY 4.0. Temperatura e vento ogni 10 minuti (MeteoNetwork di solito ogni ora), pioggia in millimetri.
 - **Ricerca località:** [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api).
 
 Nessuna chiave API, nessuna registrazione: tutte le richieste partono dal browser.
@@ -68,8 +69,9 @@ Nessuna chiave API, nessuna registrazione: tutte le richieste partono dal browse
 
 - I bollettini degli aeroporti italiani dicono **se** piove, non **quanto**: la pioggia si verifica solo come sì/no.
 - La temperatura dei METAR è arrotondata al grado intero.
+- Stazioni meteo: senza registrazione MeteoHub conserva solo gli ultimi 10 giorni, quindi per queste stazioni il periodo è limitato a **7 giorni**. Non ci sono stazioni ufficiali in Valle d’Aosta e Abruzzo, e il Lazio ne ha una sola (MeteoNetwork copre anche queste zone). Molte stazioni non hanno l’anemometro (nel menu sono segnate «senza vento») e alcune MeteoNetwork non misurano la pioggia: in quei casi la classifica usa solo le grandezze misurate. Le stazioni MeteoNetwork sono amatoriali e la qualità dipende dall’installazione.
 - Con pochi giorni (7) o pochi giorni di pioggia il risultato è poco stabile: meglio usare 30 giorni.
-- La località viene confrontata tramite l’aeroporto più vicino, che in zone montuose o molto estese può avere un clima diverso dal centro città.
+- La località viene confrontata tramite la stazione scelta (di default l’aeroporto più vicino), che in zone montuose o molto estese può avere un clima diverso dal centro città.
 
 ## Uso in locale
 

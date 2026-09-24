@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.0 — 24/09/2026
+- Oltre agli aeroporti, si possono scegliere le **stazioni meteo** entro 25 km dalla località: reti regionali ufficiali (ARPA, Protezione Civile, Meteotrentino, SIR Toscana…) e rete amatoriale MeteoNetwork, tramite MeteoHub – Agenzia ItaliaMeteo (CC-BY 4.0). Il menu le divide in gruppi e segna quelle «senza vento».
+- Per queste stazioni il periodo è limitato agli ultimi **7 giorni** (senza registrazione MeteoHub conserva 10 giorni). Di default resta proposto l’aeroporto più vicino.
+- Con le stazioni meteo la pioggia si misura in **millimetri** (giorno piovoso se ≥ 0,2 mm) e la tabella giorno per giorno mostra i mm misurati.
+- Se la stazione non misura il vento o la pioggia, le classifiche usano solo le grandezze disponibili invece di lasciare tutti senza posizione.
+- Valutate e scartate: LineaMeteo, Rete Meteo Amatori (nessuna API), Weather Underground (chiave solo per chi possiede una stazione), Meteostat (dati fermi a novembre 2025).
+
 ## v1.5.1 — 24/09/2026
 - Tolto **Open-Meteo Best match**: in tutta Italia dà gli stessi valori di DWD ICON seamless (verificato su 10 città), quindi era solo un doppione. Restano 10 modelli.
 

@@ -96,7 +96,7 @@ details li{margin:4px 0}
 <body>
 <div class="wrap">
   <h1>Meteo Benchmark</h1>
-  <p class="sub">Quale modello meteo ha previsto meglio? Per ogni giorno del periodo scelto, la previsione emessa <b>3 giorni prima</b> (2 giorni per i modelli che non arrivano più lontano) viene confrontata ora per ora con i dati misurati in aeroporto.</p>
+  <p class="sub">Quale modello meteo ha previsto meglio? Per ogni giorno del periodo scelto, la previsione emessa <b>3 giorni prima</b> (2 giorni per i modelli che non arrivano più lontano) viene confrontata ora per ora con i dati misurati in aeroporto o, per gli ultimi 7 giorni, in una stazione meteo regionale o MeteoNetwork.</p>
 
   <div class="card">
     <div class="row">
@@ -107,7 +107,7 @@ details li{margin:4px 0}
       <div class="f"><span>Località trovata</span>
         <select id="place" disabled><option>—</option></select>
       </div>
-      <div class="f"><span>Stazione di misura (aeroporto)</span>
+      <div class="f"><span>Stazione di misura</span>
         <select id="station" disabled><option>—</option></select>
       </div>
       <div class="f"><span>Periodo</span>
@@ -145,7 +145,7 @@ details li{margin:4px 0}
         <ul>
           <li><b>Errore medio</b> (temperatura e vento): di quanto sbaglia in media ogni ora, in più o in meno. Più basso è meglio.</li>
           <li><b>Errore minimo e massimo</b>: i due casi peggiori nelle due direzioni, con il segno (non in valore assoluto). L’errore è <i>previsto − misurato</i>: il <b>massimo</b> è la volta che ha esagerato di più in eccesso (+6,0 °C = ha previsto 6 gradi in più del reale), il <b>minimo</b> la volta che ha sbagliato di più in difetto (−4,5 °C = 4 gradi e mezzo in meno). Insieme dicono quanto può sbagliare nel caso singolo, che l’errore medio da solo nasconde.</li>
-          <li><b>Pioggia, indice</b> (da 0 a 1, più alto è meglio). Si guarda giorno per giorno: il modello “prevede pioggia” se per quel giorno dà almeno 0,5 mm, e all’aeroporto “è piovuto” se almeno un bollettino ha segnalato pioggia. Poi si contano:
+          <li><b>Pioggia, indice</b> (da 0 a 1, più alto è meglio). Si guarda giorno per giorno: il modello “prevede pioggia” se per quel giorno dà almeno 0,5 mm, e alla stazione “è piovuto” se almeno un bollettino dell’aeroporto ha segnalato pioggia o, per le stazioni meteo, se il pluviometro ha misurato almeno 0,2 mm. Poi si contano:
             <ul>
               <li><span class="ok">presi</span>: pioggia prevista e caduta;</li>
               <li><span class="ko">falsi allarmi</span>: pioggia prevista ma non caduta;</li>
@@ -202,8 +202,9 @@ details li{margin:4px 0}
         <ul>
           <li><b>Previsioni:</b> Open-Meteo, archivio delle corse passate dei modelli (Previous Runs API). Per ogni ora si usa il valore previsto dalla corsa di 3 giorni (72 ore) prima. Le previsioni sono calcolate sulle coordinate della stazione, non del centro città.</li>
           <li><b>Misure:</b> bollettini meteo degli aeroporti (METAR, Aeronautica Militare/ENAV), dall’archivio dell’Iowa Environmental Mesonet. Di solito c’è una misura ogni 30 minuti; la temperatura è arrotondata al grado.</li>
+          <li><b>Stazioni meteo (ultimi 7 giorni):</b> reti regionali ufficiali (ARPA, Protezione Civile) e rete amatoriale MeteoNetwork, tramite <a href="https://meteohub.agenziaitaliameteo.it/" target="_blank" rel="noopener">MeteoHub – Agenzia ItaliaMeteo</a>, licenza CC-BY 4.0. Misure ogni 10 minuti, pioggia in millimetri; ora piovosa o giorno piovoso se ≥ 0,2 mm. Senza registrazione MeteoHub conserva solo gli ultimi 10 giorni, per questo il periodo è limitato a 7. Non coperte: Valle d’Aosta, Abruzzo e quasi tutto il Lazio.</li>
           <li><b>Abbinamento orario:</b> a ogni ora si associa la misura più vicina (entro ±30 minuti). Per la pioggia si guarda l’ora precedente, come nel dato del modello.</li>
-          <li><b>Pioggia:</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Quindi si verifica solo sì/no. Giorno piovoso previsto se ≥ 0,5 mm; nel grafico orario, ora piovosa se ≥ 0,1 mm.</li>
+          <li><b>Pioggia (aeroporti):</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Quindi si verifica solo sì/no. Giorno piovoso previsto se ≥ 0,5 mm; nel grafico orario, ora piovosa se ≥ 0,1 mm.</li>
           <li><b>Vento:</b> intensità media a 10 m; nodi convertiti in km/h (×1,852).</li>
           <li><b>Modelli a corto raggio:</b> ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: si usa la sua corsa di 2 giorni (48 ore) prima. Parte avvantaggiato ed è segnato con l’etichetta gialla.</li>
           <li>Orari nel fuso di Roma. Periodo = ultimi giorni completi (oggi escluso).</li>
@@ -232,9 +233,42 @@ const MODELS = [
   {id:'ukmo_seamless',         label:'UK Met Office seamless', def:true},
   {id:'gem_seamless',          label:'GEM Canada seamless',    def:true},
 ];
+// MeteoHub (Agenzia ItaliaMeteo): regional networks + MeteoNetwork, CC-BY 4.0, no key. Anonymous users get the
+// last 10 days only, hence the 7-day cap for these stations. One network per request, so each carries its bounding box
+// [lonmin,latmin,lonmax,latmax] (from /api/datasets; Toscana and FVG have none there and are estimated).
+const MH_API = 'https://meteohub.agenziaitaliameteo.it/api/observations';
+const MH_DAYS = 7;
+const MH_NETS = {
+  'dpcn-basilicata':['Protezione Civile Basilicata',[15.38,39.94,16.82,41.09]],
+  'dpcn-bolzanoboze':['Provincia di Bolzano',[10.46,46.24,12.37,47.04]],
+  'dpcn-calabria':['ARPACAL Calabria',[15.64,37.99,17.14,40.05]],
+  'dpcn-campania':['Protezione Civile Campania',[13.84,40.04,15.7,41.45]],
+  'dpcn-lazio':['Regione Lazio',[11.48,40.93,13.95,42.76]],
+  'dpcn-liguria':['ARPAL Liguria',[7.54,43.79,10.01,44.63]],
+  'dpcn-lombardia':['ARPA Lombardia',[8.51,44.68,11.31,46.55]],
+  'dpcn-marche':['Protezione Civile Marche',[12.13,42.74,13.89,43.94]],
+  'dpcn-molise':['Regione Molise',[14.13,41.45,15.04,42.0]],
+  'dpcn-piemonte':['ARPA Piemonte',[6.7,44.07,9.19,46.44]],
+  'dpcn-puglia':['Protezione Civile Puglia',[14.96,39.81,18.48,41.95]],
+  'dpcn-sardegna':['ARPAS Sardegna',[8.21,38.97,9.7,41.22]],
+  'dpcn-sicilia':['Regione Siciliana',[11.95,36.68,15.6,38.56]],
+  'dpcn-umbria':['Regione Umbria',[11.95,42.42,13.21,43.52]],
+  'dpcn-veneto':['ARPAV Veneto',[10.69,44.85,13.08,46.67]],
+  'agrmet':['ARPAE Emilia-Romagna',[9.53,43.87,12.71,45.04]],
+  'locali':['ARPAE Emilia-Romagna',[9.38,43.95,12.54,45.08]],
+  'simnbo':['ARPAE Emilia-Romagna',[10.89,43.69,12.74,44.93]],
+  'simnpr':['ARPAE Emilia-Romagna',[9.15,44.12,12.15,45.06]],
+  'urbane':['ARPAE Emilia-Romagna',[9.68,44.06,12.57,45.05]],
+  'open-trentino':['Meteotrentino',[10.51,45.74,11.92,46.51]],
+  'sir-toscana':['SIR Toscana',[9.6,42.2,12.4,44.5]],
+  'arpafvg':['ARPA FVG',[12.3,45.55,13.95,46.7]],
+  'mnw':['MeteoNetwork (amatoriale)',[7.07,35.5,18.49,46.71]],
+};
+const MH_R = 25;   // km: MeteoHub stations offered around the place
 const NCOL = 8;   // palette size: beyond it colours repeat with a dashed, then dotted line
 const KT2KMH = 1.852;
 const RAIN_H = 0.1, RAIN_D = 0.5;
+const RAIN_G = 0.2;   // rain gauge: one tip of the bucket; below that a station hour/day counts as dry
 const PT_T = 1, PT_W = 5;    // points ranking: one point per hour with |error| within these (°C, km/h)
 const PT_WX = 10;            // ... and one per day with the daily max wind within this (km/h)
 const HOUR = 3600e3;
@@ -266,6 +300,9 @@ const pad = n => String(n).padStart(2,'0');
 const ymd = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
 // "YYYY-MM-DD HH:MM" or "YYYY-MM-DDTHH:MM" -> ms, as naive local time
 function tms(s){ return Date.UTC(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10), +s.slice(11,13)||0, +s.slice(14,16)||0); }
+// "YYYY-MM-DDTHH:MM:SS" in UTC -> "YYYY-MM-DD HH:MM" Rome local time, the naive form the rest of the page uses
+const romeFmt=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+function utcToRome(s){ return romeFmt.format(new Date(s+'Z')).replace(',',''); }
 function hav(a,b,c,d){ const R=6371, r=Math.PI/180; const x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2; return 2*R*Math.asin(Math.sqrt(x)); }
 function setStatus(msg, err){ const s=$('status'); s.textContent=msg; s.className='status'+(err?' err':''); }
 function dayLabel(d){ return new Date(d+'T12:00:00Z').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}); }
@@ -321,15 +358,77 @@ async function search(){
 
 function pickPlace(p){
   st.place=p;
-  st.stationList=st.stations.filter(s=>s.elev==null||s.elev<=1000)
-    .map(s=>({...s,dist:hav(p.latitude,p.longitude,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6);
-  const sel=$('station'); sel.innerHTML=''; sel.disabled=false;
-  st.stationList.forEach((s,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=`${s.name} (${s.sid}) · ${Math.round(s.dist)} km`; sel.appendChild(o); });
-  sel.onchange=()=>{ st.station=st.stationList[+sel.value]; };
-  st.station=st.stationList[0];
+  const airports=st.stations.filter(s=>s.elev==null||s.elev<=1000)
+    .map(s=>({...s,src:'metar',dist:hav(p.latitude,p.longitude,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6);
+  st.station=null; st.stationList=airports; fillStations();
   $('runBtn').disabled=false;
   const s=st.station;
-  setStatus(s.dist>30 ? `Attenzione: l’aeroporto più vicino è a ${Math.round(s.dist)} km, il confronto vale per quel punto. Premi “Confronta”.` : `Stazione più vicina: ${s.name}, a ${Math.round(s.dist)} km. Premi “Confronta”.`);
+  setStatus(`Cerco anche le stazioni meteo regionali e MeteoNetwork vicine…`);
+  findMH(p).then(list=>{
+    if(st.place!==p) return;
+    st.stationList=[...list,...airports]; fillStations();
+    const a0=airports[0];
+    setStatus(list.length
+      ? `Trovate ${list.length} stazioni meteo entro ${MH_R} km, più gli aeroporti (${a0.name} a ${Math.round(a0.dist)} km). Le stazioni meteo permettono solo il periodo di 7 giorni. Premi “Confronta”.`
+      : (a0.dist>30 ? `Nessuna stazione meteo regionale entro ${MH_R} km. Attenzione: l’aeroporto più vicino è a ${Math.round(a0.dist)} km, il confronto vale per quel punto. Premi “Confronta”.` : `Nessuna stazione meteo regionale entro ${MH_R} km: si usa l’aeroporto ${a0.name}, a ${Math.round(a0.dist)} km. Premi “Confronta”.`));
+  }).catch(()=>{ if(st.place===p) setStatus(`Stazioni meteo regionali non raggiungibili: si usa l’aeroporto ${s.name}, a ${Math.round(s.dist)} km. Premi “Confronta”.`); });
+}
+
+function fillStations(){
+  const sel=$('station'); sel.innerHTML=''; sel.disabled=false;
+  const groups=[['mh-off','Stazioni meteo ufficiali (solo 7 giorni)'],['mh-mnw','MeteoNetwork, amatoriali (solo 7 giorni)'],['metar','Aeroporti (METAR)']];
+  const kind=s=>s.src==='metar'?'metar':s.net==='mnw'?'mh-mnw':'mh-off';
+  groups.forEach(([k,l])=>{
+    const L=st.stationList.map((s,i)=>[s,i]).filter(([s])=>kind(s)===k); if(!L.length) return;
+    const g=document.createElement('optgroup'); g.label=l;
+    L.forEach(([s,i])=>{ const o=document.createElement('option'); o.value=i;
+      o.textContent=s.src==='metar'?`${s.name} (${s.sid}) · ${Math.round(s.dist)} km`:`${s.name} · ${Math.round(s.dist)} km${s.wind?'':' · senza vento'}`; g.appendChild(o); });
+    sel.appendChild(g);
+  });
+  sel.onchange=()=>{ st.station=st.stationList[+sel.value]; syncPeriod(); };
+  // keep what is selected when the list grows; by default the nearest airport (longest period available)
+  const prev=st.station, same=st.stationList.findIndex(s=>prev&&s.src===prev.src&&s.sid===prev.sid&&s.lat===prev.lat);
+  const i= same>=0 ? same : Math.max(0,st.stationList.findIndex(s=>s.src==='metar'));
+  sel.value=String(i); st.station=st.stationList[i]; syncPeriod();
+}
+
+// MeteoHub keeps only 10 days for anonymous users: stations from there are limited to 7 days
+function syncPeriod(){
+  const mh=st.station&&st.station.src==='mh', sel=$('period');
+  [...sel.options].forEach(o=>{ o.disabled= mh && +o.value>MH_DAYS; });
+  if(mh && +sel.value>MH_DAYS) sel.value=String(MH_DAYS);
+}
+
+async function mhGet(params){
+  const r=await fetch(MH_API+'?'+params);
+  const j=await r.json();
+  if(typeof j==='string') throw new Error(j);
+  return j;
+}
+
+// stations of every network whose bounding box touches the place, with a temperature reading yesterday at noon (UTC)
+async function findMH(p){
+  const lat=p.latitude, lon=p.longitude, dLat=MH_R/111, dLon=MH_R/(111*Math.cos(lat*Math.PI/180));
+  const bb=[lon-dLon,lat-dLat,lon+dLon,lat+dLat];
+  const nets=Object.entries(MH_NETS).filter(([,[,b]])=>b[0]<=bb[2]&&b[2]>=bb[0]&&b[1]<=bb[3]&&b[3]>=bb[1]).map(([n])=>n);
+  const y=ymd(new Date(Date.now()-24*HOUR));
+  const q=(n,prod)=>mhGet(`networks=${n}&q=reftime:>=${y} 12:00,<=${y} 12:00;product:${prod};license:CCBY_COMPLIANT`+
+      `&lonmin=${bb[0].toFixed(4)}&latmin=${bb[1].toFixed(4)}&lonmax=${bb[2].toFixed(4)}&latmax=${bb[3].toFixed(4)}&onlyStations=true`).catch(()=>null);
+  // temperature stations, and separately those with an anemometer (many rain/temperature sites have none)
+  const [res,resW]=await Promise.all([Promise.all(nets.map(n=>q(n,'B12101'))), Promise.all(nets.map(n=>q(n,'B11002')))]);
+  const key=t=>`${t.lat},${t.lon}`, windy=new Set();
+  resW.forEach(j=>{ if(j) j.data.forEach(d=>windy.add(key(d.stat))); });
+  const out=[];
+  res.forEach((j,k)=>{ if(!j) return;
+    j.data.forEach(d=>{ const t=d.stat, nm=(t.details||[]).find(x=>x.var==='B01019');
+      const dist=hav(lat,lon,t.lat,t.lon); if(dist>MH_R) return;
+      const code=nm?nm.val:`${t.lat.toFixed(3)}, ${t.lon.toFixed(3)}`;
+      // MeteoNetwork exposes only the station code there
+      const name=(nets[k]==='mnw'?`MeteoNetwork ${code}`:code).replace(/\s+METEO$/,'');
+      out.push({src:'mh', net:nets[k], sid:code, name, lat:t.lat, lon:t.lon, elev:null, dist, wind:windy.has(key(t))}); });
+  });
+  out.sort((a,b)=>a.dist-b.dist);
+  return [...out.filter(s=>s.net!=='mnw').slice(0,6), ...out.filter(s=>s.net==='mnw').slice(0,4)];   // nearest first, wind or not: the label says
 }
 
 // ---------- Data loading ----------
@@ -359,6 +458,37 @@ async function fetchObs(sid,start,end){
     const w=num(c[iW]);
     return {s:c[iV], t:tms(c[iV]), temp:num(c[iT]), wind:w==null?null:w*KT2KMH, wet};
   }).filter(o=>o.s && !isNaN(o.t));
+}
+
+// MeteoHub observations of one station, one request per day (UTC days, one extra on each side for the shift to Rome time).
+// Temperature K -> °C, wind m/s -> km/h; rain is summed per hour ending at HH:00, as the model precipitation is.
+async function fetchObsMH(s,days){
+  const d0=new Date(days[0]+'T00:00:00Z'), qd=[];
+  for(let i=-1;i<=days.length;i++) qd.push(ymd(new Date(d0.getTime()+i*24*HOUR)));
+  const e=0.001, bb=`&lonmin=${(s.lon-e).toFixed(5)}&latmin=${(s.lat-e).toFixed(5)}&lonmax=${(s.lon+e).toFixed(5)}&latmax=${(s.lat+e).toFixed(5)}`;
+  const tasks=qd.map(d=>()=>mhGet(`networks=${s.net}&q=reftime:>=${d} 00:00,<=${d} 23:59;license:CCBY_COMPLIANT${bb}&allStationProducts=true&reliabilityCheck=true`)
+    .catch(err=>{ if(/archived|logged/i.test(err.message)) return null; throw err; }));
+  const res=await pool(tasks,2);
+  const recs=new Map(), rain=new Map();
+  const rec=ref=>{ let r=recs.get(ref); if(!r){ const loc=utcToRome(ref); r={s:loc,t:tms(loc),temp:null,wind:null,wet:false}; recs.set(ref,r); } return r; };
+  res.forEach(j=>{ if(!j) return;
+    const stn=j.data.find(d=>Math.abs(d.stat.lat-s.lat)<1e-5&&Math.abs(d.stat.lon-s.lon)<1e-5); if(!stn) return;
+    const P=stn.prod.filter(p=>p.val&&p.val.length);
+    const pick=(v,lev)=>P.filter(p=>p.var===v).sort((a,b)=>(String(b.lev)===lev)-(String(a.lev)===lev))[0];
+    const T=pick('B12101','103,2000,0,0'), W=pick('B11002','103,10000,0,0');
+    // one accumulation series only (some stations send both 1-minute and hourly totals): prefer hourly
+    const R=P.filter(p=>p.var==='B13011').sort((a,b)=>(+String(b.trange).split(',')[2]===3600)-(+String(a.trange).split(',')[2]===3600))[0];
+    const ok=v=>v.val!=null&&v.rel!==0;
+    if(T) T.val.forEach(v=>{ if(ok(v)) rec(v.ref).temp=v.val-273.15; });
+    if(W) W.val.forEach(v=>{ if(ok(v)) rec(v.ref).wind=v.val*3.6; });
+    if(R) R.val.forEach(v=>{ if(!ok(v)) return; const t=Date.UTC(+v.ref.slice(0,4),+v.ref.slice(5,7)-1,+v.ref.slice(8,10),+v.ref.slice(11,13),+v.ref.slice(14,16));
+      const h=Math.ceil(t/HOUR)*HOUR; rain.set(h,(rain.get(h)||0)+v.val); });
+  });
+  const out=[...recs.values()];
+  if(!rain.size) out.noRain=true;   // no rain gauge: rain is unknown, not zero
+  rain.forEach((mm,h)=>{ const loc=utcToRome(new Date(h).toISOString().slice(0,19));
+    out.push({s:loc,t:tms(loc),temp:null,wind:null,mm,wet:mm>=RAIN_G}); });
+  out.sort((a,b)=>a.t-b.t); return out;
 }
 
 async function fetchModel(id,sd,ed,lat,lon){
@@ -396,14 +526,14 @@ async function run(){
     let done=0;
     const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],days[days.length-1],s.lat.toFixed(4),s.lon.toFixed(4));
       done++; setStatus(`Scarico le previsioni… ${done}/${MODELS.length} modelli`); return r; });
-    const [obsRaw, fcs]=await Promise.all([ fetchObs(s.sid,start,end), pool(tasks,3) ]);
+    const [obsRaw, fcs]=await Promise.all([ s.src==='mh' ? fetchObsMH(s,days) : fetchObs(s.sid,start,end), pool(tasks,3) ]);
     const fc={}; MODELS.forEach((m,i)=>fc[m.id]=fcs[i]);
-    const inPeriod=obsRaw.filter(o=>days.includes(o.s.slice(0,10)));
-    if(inPeriod.length<20) throw new Error(`poche o nessuna misura disponibile per ${s.sid} nel periodo`);
+    const inPeriod=obsRaw.filter(o=>days.includes(o.s.slice(0,10))); inPeriod.noRain=obsRaw.noRain;
+    if(inPeriod.length<20) throw new Error(`poche o nessuna misura disponibile per ${s.src==='mh'?s.name:s.sid} nel periodo`);
     if(!Object.values(fc).some(f=>f.ok)) throw new Error('nessun modello ha risposto: riprova tra un minuto');
-    st.data=buildData(days,inPeriod,fc);
+    st.data=buildData(days,inPeriod,fc); st.data.station=s;
     const failed=MODELS.filter(m=>!fc[m.id].ok).map(m=>mlabel(m.id));
-    setStatus(`Fatto: ${inPeriod.length} bollettini dell’aeroporto, ${MODELS.length-failed.length} modelli con dati.`+(failed.length?` Non disponibili qui: ${failed.join(', ')}.`:''));
+    setStatus(`Fatto: ${inPeriod.length} ${s.src==='mh'?'misure della stazione':'bollettini dell’aeroporto'}, ${MODELS.length-failed.length} modelli con dati.`+(failed.length?` Non disponibili qui: ${failed.join(', ')}.`:''));
     $('results').classList.remove('hidden');
     renderChips(); renderAll();
   }catch(e){ setStatus('Errore: '+e.message,true); }
@@ -422,7 +552,7 @@ function buildData(days,obs,fc){
     const h=Math.round(o.t/HOUR)*HOUR, i=idx.get(h), d=Math.abs(o.t-h);
     if(i!=null && d<=30*60e3 && d<best[i]){ best[i]=d; oT[i]=o.temp; oW[i]=o.wind; }
     const j=idx.get(Math.ceil(o.t/HOUR)*HOUR);
-    if(j!=null) oR[j]=(oR[j]||false)||o.wet;
+    if(j!=null && !obs.noRain) oR[j]=(oR[j]||false)||o.wet;
   });
   // daily obs
   const od={};
@@ -433,6 +563,10 @@ function buildData(days,obs,fc){
       tmax:tt.length?Math.max(...tt):null, tmin:tt.length?Math.min(...tt):null,
       wmean:ww.length?ww.reduce((a,b)=>a+b,0)/ww.length:null, wmax:ww.length?Math.max(...ww):null,
       rain:L.some(o=>o.wet), rainH:new Set(L.filter(o=>o.wet).map(o=>o.s.slice(11,13))).size };
+    // rain gauge (MeteoHub): the day's total in mm decides, as the models' daily sum does
+    if(od[d] && obs.noRain){ od[d].rain=null; od[d].rainH=null; }
+    const M=L.filter(o=>o.mm!=null);
+    if(od[d] && M.length){ od[d].rainMM=M.reduce((a,o)=>a+o.mm,0); od[d].rain=od[d].rainMM>=RAIN_G; }
   });
   // daily forecasts
   const dayIdx={}; days.forEach(d=>dayIdx[d]=times.map((t,i)=>t.startsWith(d)?i:-1).filter(i=>i>=0));
@@ -459,7 +593,7 @@ function buildData(days,obs,fc){
        pts:e.filter(x=>Math.abs(x)<=thr+1e-9).length};
     // rain, day by day: hit = rain forecast and fell; fa = false alarm; miss = rain not forecast; dry = dry forecast, dry day
     let hit=0, fa=0, miss=0, dry=0;
-    days.forEach(d=>{ const o=od[d], p=fd[id][d]; if(!(o&&p&&p.psum!=null)) return;
+    days.forEach(d=>{ const o=od[d], p=fd[id][d]; if(!(o&&o.rain!=null&&p&&p.psum!=null)) return;
       const F=p.psum>=RAIN_D; if(F&&o.rain) hit++; else if(F) fa++; else if(o.rain) miss++; else dry++; });
     const nd=hit+fa+miss+dry, ev=hit+fa+miss;
     // index = hits / (hits + false alarms + misses); no rain forecast and none fell -> nothing got wrong -> 1
@@ -477,13 +611,20 @@ function renderAll(){ renderMeta(); renderRank(); renderPts(); renderDayMode(); 
 function activeOk(){ return MODELS.filter(m=>st.active.has(m.id) && st.data.fc[m.id].ok).map(m=>m.id); }
 
 function renderMeta(){
-  const s=st.station, D=st.data, p=st.place;
+  const D=st.data, s=D.station, p=st.place, mh=s.src==='mh';
   const rainDays=D.days.filter(d=>D.od[d]&&D.od[d].rain).length;
-  $('meta').innerHTML=`<span>Città: <b>${p.name}</b></span><span>Stazione: <b>${s.name} (${s.sid})</b>, ${Math.round(s.dist)} km${s.elev!=null?`, ${Math.round(s.elev)} m s.l.m.`:''}</span>`+
+  const src = mh ? `<span>Dati: <b>${MH_NETS[s.net][0]}</b> tramite <a href="https://meteohub.agenziaitaliameteo.it/" target="_blank" rel="noopener">MeteoHub – Agenzia ItaliaMeteo</a> (CC-BY 4.0)</span>` : '';
+  $('meta').innerHTML=`<span>Città: <b>${p.name}</b></span><span>Stazione: <b>${mh?s.name:`${s.name} (${s.sid})`}</b>, ${Math.round(s.dist)} km${s.elev!=null?`, ${Math.round(s.elev)} m s.l.m.`:''}</span>`+src+
     `<span>Periodo: <b>${dayLabel(D.days[0])} – ${dayLabel(D.days[D.days.length-1])}</b> (${D.days.length} giorni)</span><span>Giorni di pioggia misurati: <b>${rainDays}</b></span>`+
-    (s.dist>30?`<span class="warn">Stazione lontana dalla città: il confronto vale per l’aeroporto.</span>`:'');
+    (s.dist>30?`<span class="warn">Stazione lontana dalla città: il confronto vale per quel punto.</span>`:'')+
+    (mh&&s.net==='mnw'?`<span class="warn">Stazione amatoriale: la qualità della misura dipende da come è installata.</span>`:'');
 }
 
+// mean placement over the rankings the station can support (a station without anemometer has no wind ranking)
+function meanRank(ids,R){
+  const use=R.filter(r=>Object.keys(r).length);
+  return id=> use.length && use.every(r=>r[id]) ? use.reduce((a,r)=>a+r[id],0)/use.length : null;
+}
 function ranks(ids,val,asc){
   const v=ids.map(id=>({id,x:val(id)})).filter(o=>o.x!=null).sort((a,b)=>asc?a.x-b.x:b.x-a.x);
   const r={}; v.forEach((o,i)=>{ r[o.id]= i>0 && Math.abs(o.x-v[i-1].x)<1e-9 ? r[v[i-1].id] : i+1; }); return r;
@@ -493,7 +634,7 @@ function renderRank(){
   const D=st.data, ids=activeOk(), m=id=>D.M[id];
   const fT=id=>m(id).t&&m(id).t.mae, fW=id=>m(id).w&&m(id).w.mae, fR=id=>m(id).r&&m(id).r.idx;
   const rT=ranks(ids,fT,true), rW=ranks(ids,fW,true), rR=ranks(ids,id=>m(id).r&&(m(id).r.idx+m(id).r.ok*1e-4),false);   // ties broken by days right
-  const rows=ids.map(id=>({id,score:(rT[id]&&rW[id]&&rR[id])?(rT[id]+rW[id]+rR[id])/3:null}))
+  const sc=meanRank(ids,[rT,rW,rR]), rows=ids.map(id=>({id,score:sc(id)}))
     .sort((a,b)=>(a.score??99)-(b.score??99));
   const bestOf=(f,asc)=>{ const v=ids.map(f).filter(x=>x!=null); return v.length?(asc?Math.min(...v):Math.max(...v)):null; };
   const bT=bestOf(fT,true), bW=bestOf(fW,true), bR=bestOf(fR,false);
@@ -527,7 +668,7 @@ function renderPts(){
   const D=st.data, ids=activeOk(), m=id=>D.M[id];
   const fT=id=>m(id).t&&m(id).t.pts, fW=id=>m(id).w&&m(id).w.pts, fX=id=>m(id).wx&&m(id).wx.pts;
   const rT=ranks(ids,fT,false), rW=ranks(ids,fW,false), rX=ranks(ids,fX,false), rR=ranks(ids,id=>m(id).r&&(m(id).r.idx+m(id).r.ok*1e-4),false);
-  const rows=ids.map(id=>({id,score:(rT[id]&&rW[id]&&rX[id]&&rR[id])?(rT[id]+rW[id]+rX[id]+rR[id])/4:null}))
+  const sc=meanRank(ids,[rT,rW,rX,rR]), rows=ids.map(id=>({id,score:sc(id)}))
     .sort((a,b)=>(a.score??99)-(b.score??99));
   const pos=r=>r?`<span class="na">${r}°</span>`:'';
   const cls=r=>r===1?' class="top"':'';
@@ -581,7 +722,9 @@ function renderDay(){
   label(0,'');
   D.days.forEach((d,i)=>{ const o=D.od[d];
     if(!o){ g+=cell(i,0,'–',muted,`${dayLabel(d)}: nessuna misura`); return; }
-    if(isR) g+=cell(i,0,o.rain?'sì':'no',o.rain?ink:muted,`${dayLabel(d)}: ${o.rain?`pioggia (${o.rainH} ${o.rainH===1?'ora':'ore'})`:'niente pioggia'}`,o.rain);
+    if(isR && o.rain==null){ g+=cell(i,0,'–',muted,`${dayLabel(d)}: la stazione non misura la pioggia`); return; }
+    if(isR && o.rainMM!=null){ const z=Math.round(o.rainMM*10)===0; g+=cell(i,0,z?'0':fmt(o.rainMM),o.rain?ink:muted,`${dayLabel(d)}: ${fmt(o.rainMM)} mm misurati`,o.rain); }
+    else if(isR) g+=cell(i,0,o.rain?'sì':'no',o.rain?ink:muted,`${dayLabel(d)}: ${o.rain?`pioggia (${o.rainH} ${o.rainH===1?'ora':'ore'})`:'niente pioggia'}`,o.rain);
     else g+=cell(i,0,fmt(o[v],dec),ink,`${dayLabel(d)} · misurato: ${fmt(o[v])}${unit}`,true);
   });
   // model lanes
@@ -591,7 +734,7 @@ function renderDay(){
     D.days.forEach((d,i)=>{ const p=D.fd[id][d], o=D.od[d], tip0=`${mlabel(id)} · ${dayLabel(d)}`;
       if(!p || (isR&&p.psum==null) || (!isR&&p[v]==null)){ g+=cell(i,r,'–',muted,tip0+': n.d.'); return; }
       if(isR){
-        const F=p.psum>=RAIN_D, k2 = !o ? null : F&&o.rain?'hit':F?'fa':o.rain?'miss':'dry';
+        const F=p.psum>=RAIN_D, k2 = !o||o.rain==null ? null : F&&o.rain?'hit':F?'fa':o.rain?'miss':'dry';
         if(k2 && k2!=='dry') agg[k2]++;
         const outcome={hit:'presa',fa:'falso allarme',miss:'mancata',dry:'asciutto previsto asciutto'}[k2]||'';
         const tip=`${tip0}: ${fmt(p.psum)} mm${outcome?' · '+outcome:''}`;
@@ -623,7 +766,7 @@ function renderDay(){
   $('dayHint').textContent = isR
     ? (mode==='err'
       ? `✓ = pioggia prevista (≥ ${fmt(RAIN_D)} mm) e caduta; FA = falso allarme, prevista ma non caduta; M = mancata, caduta ma non prevista; · = asciutto previsto asciutto, che l’indice non conta. Accanto al nome l’indice pioggia del periodo.`
-      : `Millimetri previsti per il giorno; in grassetto quando il modello “prevede pioggia” (≥ ${fmt(RAIN_D)} mm). In alto se all’aeroporto è piovuto. Accanto al nome l’indice pioggia del periodo.`)
+      : `Millimetri previsti per il giorno; in grassetto quando il modello “prevede pioggia” (≥ ${fmt(RAIN_D)} mm). In alto se alla stazione è piovuto (in mm, se è una stazione meteo con pluviometro). Accanto al nome l’indice pioggia del periodo.`)
     : (mode==='err'
       ? `Errore sul valore del giorno (${what}), previsto − misurato: positivo = previsto più ${isT?'caldo':'forte'}, negativo = più ${isT?'freddo':'debole'}. Accanto al nome la media degli errori in valore assoluto.`
       : `Valori del giorno (${what}): in alto il misurato, sotto quanto previsto da ogni modello. Accanto al nome la media degli errori in valore assoluto. Passa sopra un numero per i dettagli.`);
@@ -682,7 +825,7 @@ function renderTS(){
     }
   };
   $('tsHint').textContent = v==='r'
-    ? 'Fasce azzurre = ore in cui all’aeroporto pioveva. Linee = millimetri all’ora previsti 3 giorni prima (meno per i modelli con l’etichetta gialla).'
+    ? 'Fasce azzurre = ore in cui alla stazione pioveva. Linee = millimetri all’ora previsti 3 giorni prima (meno per i modelli con l’etichetta gialla).'
     : 'Linea spessa = misurato. Linee colorate = previsioni emesse 3 giorni prima (meno per i modelli con l’etichetta gialla).';
   $('legend2').innerHTML = v==='r'
     ? `<span><i class="ln" style="background:var(--rainband);border:0;height:12px;width:12px"></i>Pioggia misurata</span>`+legendHTML(false)
