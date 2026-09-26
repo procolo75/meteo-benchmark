@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.1.0 — 26/09/2026
+- Nuovo pulsante **«Confronta tutte le stazioni»**: valuta tutte le stazioni meteo ufficiali vicine (entro 25 km) e gli aeroporti entro 50 km, poi fa la media delle posizioni. Il vincitore vale per la zona e non cambia più a seconda della singola stazione. MeteoNetwork è escluso. Il dettaglio mostra una colonna per stazione e le stazioni vinte da ogni modello.
+- **Corretto:** per le stazioni MeteoHub si leggevano i valori medi giornalieri di temperatura e vento (uno al giorno) invece delle misure ogni 15–30 minuti. Da qui la temperatura oraria sempre con «pochi casi», gli scarti sulle massime di ±4–5 °C e stazioni scartate per mancanza di misure.
+- **Corretto:** quando l’archivio degli aeroporti (IEM) risponde «troppe richieste», la pagina aspetta e riprova invece di dire «nessuna misura».
+- Il periodo non si blocca più a 7 giorni quando è scelta una stazione meteo: le stazioni meteo usano comunque al massimo 7 giorni, gli aeroporti il periodo scelto.
+
 ## v3.0.0 — 26/09/2026
 - La pagina ora risponde a una sola domanda: **quali modelli sono più affidabili per ogni tipo di previsione**, usando solo lo scarto per l’80% e giudicando insieme le previsioni emesse 3, 2 e 1 giorno prima.
 - Nuova tabella **«Modelli più affidabili»**: per ogni tipo di previsione (temperatura ora per ora, massima, minima; vento medio e massimo; pioggia del giorno, oraria e a 3 ore) i tre modelli con la miglior posizione media sulle tre scadenze. Un clic su una riga apre il dettaglio.

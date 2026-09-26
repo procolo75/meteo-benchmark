@@ -104,7 +104,8 @@ details li{margin:4px 0}
           <option value="30" selected>Ultimi 30 giorni</option>
         </select>
       </div>
-      <button class="primary" id="runBtn" type="button" disabled>Confronta</button>
+      <button class="primary" id="runBtn" type="button" disabled title="Solo la stazione scelta">Confronta</button>
+      <button class="primary" id="runAllBtn" type="button" disabled title="Tutte le stazioni meteo ufficiali vicine e gli aeroporti entro 50 km, con la media dei risultati">Confronta tutte le stazioni</button>
     </div>
     <div class="chipbar"><span>Modelli</span>
       <button type="button" id="allBtn">Tutti</button>
@@ -119,7 +120,7 @@ details li{margin:4px 0}
       <h2>Modelli più affidabili</h2>
       <div class="meta" id="meta"></div>
       <div id="note"></div>
-      <p class="hint" style="margin:12px 0 0">Per ogni tipo di previsione si misura lo <b>scarto più piccolo entro cui cade <span class="acc-l">l’80</span>% delle previsioni</b> del modello: «±1,8 °C» vuol dire che <span class="acc-n">nell’80</span>% dei casi ha sbagliato al massimo di 1,8 °C (in più o in meno), e solo nei restanti casi di più. Si calcola tre volte, sulle previsioni emesse <b>3, 2 e 1 giorno prima</b>: a ogni scadenza i modelli sono messi in fila dal più preciso (1°, 2°…), e la <b>posizione media</b> sulle tre scadenze dice chi è più affidabile. Più bassa è meglio; a parità conta lo scarto. Temperatura e vento medio si contano ora per ora; massime, minime e vento massimo giorno per giorno.</p>
+      <p class="hint" style="margin:12px 0 0">Per ogni tipo di previsione si misura lo <b>scarto più piccolo entro cui cade <span class="acc-l">l’80</span>% delle previsioni</b> del modello: «±1,8 °C» vuol dire che <span class="acc-n">nell’80</span>% dei casi ha sbagliato al massimo di 1,8 °C (in più o in meno), e solo nei restanti casi di più. Si calcola tre volte, sulle previsioni emesse <b>3, 2 e 1 giorno prima</b>: a ogni scadenza i modelli sono messi in fila dal più preciso (1°, 2°…), e la <b>posizione media</b> sulle tre scadenze dice chi è più affidabile. Più bassa è meglio; a parità conta lo scarto.<span class="all-only"> Con <b>«Confronta tutte le stazioni»</b> questo si fa per ogni stazione della zona e poi si fa la media: il vincitore non dipende più da un solo punto, né dai pochi giorni di una singola stazione.</span> Temperatura e vento medio si contano ora per ora; massime, minime e vento massimo giorno per giorno.</p>
       <p class="hint" style="margin:8px 0 0"><b>Pioggia</b>, in millimetri: solo con le stazioni meteo, perché gli aeroporti non misurano la quantità. Contano solo i giorni, le ore o i blocchi di 3 ore in cui è piovuto o il modello prevedeva pioggia (almeno 0,2 mm): altrimenti le tante ore asciutte darebbero scarto 0 a tutti. Con meno di 5 casi il valore non è calcolato.</p>
       <div class="tolbar"><label class="tolf">Accuratezza richiesta <input type="number" id="accIn" min="50" max="99" step="5"> %</label></div>
       <p class="hint" style="margin:8px 0 0">Per ogni tipo di previsione i tre modelli più affidabili, tra parentesi la posizione media. Clicca su una riga per il dettaglio di tutti i modelli.</p>
@@ -131,7 +132,8 @@ details li{margin:4px 0}
         <h2>Dettaglio</h2>
         <div class="f"><span>Tipo di previsione</span><select id="accVar"></select></div>
       </div>
-      <p class="hint" style="margin:0">Lo scarto per <span class="acc-l">l’80</span>% a ogni scadenza, tra parentesi su quanti casi è calcolato, poi il piazzamento del modello a quella scadenza; in giallo il migliore di ogni colonna. L’ultima colonna è la media dei piazzamenti. ItaliaMeteo ICON-2I (etichetta gialla) non arriva a 3 giorni: la sua media è solo su 2 e 1 giorno. Clicca sull’intestazione per ordinare (di nuovo per invertire, su # per tornare all’ordine della classifica).</p>
+      <p class="hint all-only" style="margin:0">Una colonna per stazione, con la posizione media del modello in quella stazione (a 3, 2 e 1 giorno; passa sopra il numero per gli scarti). In giallo il migliore di ogni stazione. «Stazioni vinte»: in quante stazioni è arrivato primo, su quelle in cui è stato giudicato. L’ultima colonna è la media, che decide la classifica. Clicca sull’intestazione per ordinare.</p>
+      <p class="hint one-only" style="margin:0">Lo scarto per <span class="acc-l">l’80</span>% a ogni scadenza, tra parentesi su quanti casi è calcolato, poi il piazzamento del modello a quella scadenza; in giallo il migliore di ogni colonna. L’ultima colonna è la media dei piazzamenti. ItaliaMeteo ICON-2I (etichetta gialla) non arriva a 3 giorni: la sua media è solo su 2 e 1 giorno. Clicca sull’intestazione per ordinare (di nuovo per invertire, su # per tornare all’ordine della classifica).</p>
       <div class="tbl" style="margin-top:14px"><table id="accTbl"></table></div>
     </div>
 
@@ -147,6 +149,7 @@ details li{margin:4px 0}
           <li><b>Pioggia (aeroporti):</b> i bollettini degli aeroporti italiani non riportano i millimetri, solo se sta piovendo (esclusa la pioggia “nelle vicinanze”). Per questo la precisione sulla pioggia si valuta solo con le stazioni meteo; dagli aeroporti si contano solo i giorni di pioggia misurati, indicati in alto.</li>
           <li><b>Vento:</b> intensità media a 10 m; nodi convertiti in km/h (×1,852).</li>
           <li><b>Modelli a corto raggio:</b> ItaliaMeteo ICON-2I, ad alta risoluzione, non arriva a 3 giorni: è giudicato solo sulle previsioni di 2 e 1 giorno prima, e la sua posizione media è calcolata su quelle due (etichetta gialla).</li>
+          <li><b>Confronta tutte le stazioni:</b> si usano tutte le stazioni meteo ufficiali entro 25 km e gli aeroporti entro 50 km (o il più vicino); MeteoNetwork resta fuori perché le stazioni amatoriali sono troppo diverse tra loro. Ogni stazione usa il suo periodo (aeroporti quello scelto, stazioni meteo al massimo 7 giorni) e pesa uguale nella media. Per ogni tipo di previsione un modello entra in classifica se è giudicato in almeno metà delle stazioni che lo misurano.</li>
           <li>Orari nel fuso di Roma. Periodo = ultimi giorni completi (oggi escluso).</li>
         </ul>
       </details>
@@ -205,6 +208,7 @@ const MH_NETS = {
   'mnw':['MeteoNetwork (amatoriale)',[7.07,35.5,18.49,46.71]],
 };
 const MH_R = 25;   // km: MeteoHub stations offered around the place
+const AIR_R = 50;   // km: airports taken into «Confronta tutte le stazioni»
 const NCOL = 8;   // palette size: beyond it colours repeat with a dashed, then dotted line
 const KT2KMH = 1.852;
 const RAIN_G = 0.2;   // rain gauge: one tip of the bucket; below that a station hour/day counts as dry
@@ -221,7 +225,7 @@ const STATIONS = [["LIBA","Amendola",41.5381,15.7139,60],["LIBC","Crotone",38.99
 const st = {
   stations:STATIONS, place:null, stationList:[], station:null,
   active:new Set(MODELS.filter(m=>m.def).map(m=>m.id)),
-  slot:{}, datas:null, S:null, ids:[], acc:80, accVar:'t', sort:{}
+  slot:{}, sets:null, skipped:[], mode:'one', S:null, per:null, ids:[], acc:80, accVar:'t', sort:{}
 };
 
 // ---------- Helpers ----------
@@ -259,7 +263,7 @@ function renderChips(){
   const box=$('chips'); box.innerHTML='';
   MODELS.forEach(m=>{
     const on=st.active.has(m.id);
-    const fc = st.datas && Object.values(st.datas)[0].fc[m.id], failed = st.datas && !fcOk(m.id);
+    const failed = st.sets && !fcOk(m.id), fc = failed && allDatas().map(D=>D.fc[m.id]).find(f=>f.err);
     const lab=document.createElement('label');
     lab.className='chip'+(on?'':' off');
     lab.title = failed ? 'Nessun dato per questo punto: '+fc.err : '';
@@ -267,7 +271,7 @@ function renderChips(){
     lab.querySelector('input').addEventListener('change',e=>{
       if(e.target.checked){ st.active.add(m.id); assignSlot(m.id); }
       else { st.active.delete(m.id); delete st.slot[m.id]; }
-      renderChips(); if(st.datas) renderAll();
+      renderChips(); if(st.sets) renderAll();
     });
     box.appendChild(lab);
   });
@@ -275,7 +279,7 @@ function renderChips(){
 function selectModels(ids){
   st.active=new Set(ids); st.slot={};
   MODELS.forEach(m=>{ if(st.active.has(m.id)) assignSlot(m.id); });
-  renderChips(); if(st.datas) renderAll();
+  renderChips(); if(st.sets) renderAll();
 }
 renderChips();
 
@@ -301,18 +305,18 @@ function pickPlace(p){
   const airports=st.stations.filter(s=>s.elev==null||s.elev<=1000)
     .map(s=>({...s,src:'metar',dist:hav(p.latitude,p.longitude,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6);
   st.station=null; st.stationList=airports; fillStations();
-  $('runBtn').disabled=false;
+  $('runBtn').disabled=false; $('runAllBtn').disabled=true;
   const s=st.station;
   setStatus(`Cerco anche le stazioni meteo regionali e MeteoNetwork vicine…`);
   findMH(p).then(list=>{
     if(st.place!==p) return;
-    st.stationList=[...list,...airports]; fillStations();
+    st.stationList=[...list,...airports]; fillStations(); $('runAllBtn').disabled=false;
     nameMNW(list.filter(s=>s.net==='mnw'),p);
     const a0=airports[0];
     setStatus(list.length
-      ? `Trovate ${list.length} stazioni meteo entro ${MH_R} km, più gli aeroporti (${a0.name} a ${Math.round(a0.dist)} km). Le stazioni meteo permettono solo il periodo di 7 giorni. Premi “Confronta”.`
+      ? `Trovate ${list.length} stazioni meteo entro ${MH_R} km, più gli aeroporti (${a0.name} a ${Math.round(a0.dist)} km). Le stazioni meteo arrivano al massimo a 7 giorni. Premi “Confronta” per la stazione scelta o “Confronta tutte le stazioni” per la media della zona.`
       : (a0.dist>30 ? `Nessuna stazione meteo regionale entro ${MH_R} km. Attenzione: l’aeroporto più vicino è a ${Math.round(a0.dist)} km, il confronto vale per quel punto. Premi “Confronta”.` : `Nessuna stazione meteo regionale entro ${MH_R} km: si usa l’aeroporto ${a0.name}, a ${Math.round(a0.dist)} km. Premi “Confronta”.`));
-  }).catch(()=>{ if(st.place===p) setStatus(`Stazioni meteo regionali non raggiungibili: si usa l’aeroporto ${s.name}, a ${Math.round(s.dist)} km. Premi “Confronta”.`); });
+  }).catch(()=>{ if(st.place===p){ $('runAllBtn').disabled=false; setStatus(`Stazioni meteo regionali non raggiungibili: si usa l’aeroporto ${s.name}, a ${Math.round(s.dist)} km. Premi “Confronta”.`); } });
 }
 
 function fillStations(){
@@ -326,19 +330,13 @@ function fillStations(){
       o.textContent=s.src==='metar'?`${s.name} (${s.sid}) · ${Math.round(s.dist)} km`:`${s.name} · ${Math.round(s.dist)} km${s.wind?'':' · senza vento'}`; g.appendChild(o); });
     sel.appendChild(g);
   });
-  sel.onchange=()=>{ st.station=st.stationList[+sel.value]; syncPeriod(); };
+  sel.onchange=()=>{ st.station=st.stationList[+sel.value]; };
   // keep what is selected when the list grows; by default the nearest airport (longest period available)
   const prev=st.station, same=st.stationList.findIndex(s=>prev&&s.src===prev.src&&s.sid===prev.sid&&s.lat===prev.lat);
   const i= same>=0 ? same : Math.max(0,st.stationList.findIndex(s=>s.src==='metar'));
-  sel.value=String(i); st.station=st.stationList[i]; syncPeriod();
+  sel.value=String(i); st.station=st.stationList[i];
 }
 
-// MeteoHub keeps only 10 days for anonymous users: stations from there are limited to 7 days
-function syncPeriod(){
-  const mh=st.station&&st.station.src==='mh', sel=$('period');
-  [...sel.options].forEach(o=>{ o.disabled= mh && +o.value>MH_DAYS; });
-  if(mh && +sel.value>MH_DAYS) sel.value=String(MH_DAYS);
-}
 
 // MeteoHub gives MeteoNetwork stations by code only (cmp080): name them after the place they stand in, from
 // OpenStreetMap (Nominatim: one request per second at most, results kept in the browser)
@@ -410,7 +408,14 @@ async function fetchObs(sid,start,end){
     `&year1=${start.getUTCFullYear()}&month1=${start.getUTCMonth()+1}&day1=${start.getUTCDate()}`+
     `&year2=${e2.getUTCFullYear()}&month2=${e2.getUTCMonth()+1}&day2=${e2.getUTCDate()}`+
     `&tz=Europe%2FRome&format=onlycomma&latlon=no&missing=M&trace=T&direct=no&report_type=3&report_type=4`;
-  const txt=await (await fetch(u)).text();
+  // IEM answers 429 "Too many requests" when asked too often: wait and retry, then say so instead of "no data"
+  let txt;
+  for(let attempt=1;;attempt++){
+    const r=await fetch(u); txt=await r.text();
+    if(r.status!==429 && !/too many requests/i.test(txt)) break;
+    if(attempt===4) throw new Error('l’archivio degli aeroporti è occupato, riprova tra un minuto');
+    await new Promise(res=>setTimeout(res,4000*attempt));
+  }
   const lines=txt.trim().split('\n'); const hdr=lines.shift().split(',');
   const iT=hdr.indexOf('tmpc'), iW=hdr.indexOf('sknt'), iX=hdr.indexOf('wxcodes'), iV=hdr.indexOf('valid');
   const num=v=>(v==null||v==='M'||v==='')?null:+v;
@@ -437,7 +442,9 @@ async function fetchObsMH(s,days){
   res.forEach(j=>{ if(!j) return;
     const stn=j.data.find(d=>Math.abs(d.stat.lat-s.lat)<1e-5&&Math.abs(d.stat.lon-s.lon)<1e-5); if(!stn) return;
     const P=stn.prod.filter(p=>p.val&&p.val.length);
-    const pick=(v,lev)=>P.filter(p=>p.var===v).sort((a,b)=>(String(b.lev)===lev)-(String(a.lev)===lev))[0];
+    // instantaneous readings only (trange 254,0,0): the same variable also comes as daily mean, max and min
+    const inst=p=>String(p.trange)==='254,0,0';
+    const pick=(v,lev)=>P.filter(p=>p.var===v&&inst(p)).sort((a,b)=>(String(b.lev)===lev)-(String(a.lev)===lev))[0];
     const T=pick('B12101','103,2000,0,0'), W=pick('B11002','103,10000,0,0');
     // one accumulation series only (some stations send both 1-minute and hourly totals): prefer hourly
     const R=P.filter(p=>p.var==='B13011').sort((a,b)=>(+String(b.trange).split(',')[2]===3600)-(+String(a.trange).split(',')[2]===3600))[0];
@@ -482,29 +489,66 @@ async function pool(tasks,k){
   return res;
 }
 
+// One station: measurements and the three leads of every model, as {station, datas: {lead: data}, nObs, days}.
+// MeteoHub stations stop at MH_DAYS whatever the period chosen. `tell` reports the model download progress.
+async function loadStation(s,n,tell){
+  const {start,end,days}=periodDates(s.src==='mh'?Math.min(n,MH_DAYS):n);
+  let done=0;
+  const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],ymd(new Date(tms(days[days.length-1])+24*HOUR)),s.lat.toFixed(4),s.lon.toFixed(4));
+    done++; tell(`${done}/${MODELS.length} modelli`); return r; });
+  const [obsRaw, fcs]=await Promise.all([ s.src==='mh' ? fetchObsMH(s,days) : fetchObs(s.sid,start,end), pool(tasks,3) ]);
+  // forecasts per lead; a model that does not reach L days has no data there (judged on the leads it reaches)
+  const fcBy={}; LEADS.forEach(L=>{ fcBy[L]={}; MODELS.forEach((m,i)=>{ const r=fcs[i];
+    fcBy[L][m.id]= !r.ok ? r : L<=mmax(m.id) ? r.by[L] : {ok:false,err:`non arriva a ${L} giorni`,short:true}; }); });
+  const inPeriod=obsRaw.filter(o=>days.includes(o.s.slice(0,10))); inPeriod.noRain=obsRaw.noRain;
+  if(inPeriod.length<20) throw new Error('poche o nessuna misura nel periodo');
+  if(!LEADS.some(L=>Object.values(fcBy[L]).some(f=>f.ok))) throw new Error('nessun modello ha risposto: riprova tra un minuto');
+  const datas={}; LEADS.forEach(L=>{ if(Object.values(fcBy[L]).some(f=>f.ok)) datas[L]=buildData(days,inPeriod,fcBy[L]); });
+  return {station:s, datas, nObs:inPeriod.length, days};
+}
+
+function busy(on){ $('runBtn').disabled=on; $('runAllBtn').disabled=on||!st.stationList.length; }
+function showResults(msg){
+  $('results').classList.remove('hidden');
+  const failed=MODELS.filter(m=>!fcOk(m.id)).map(m=>m.label);
+  setStatus(msg+` ${MODELS.length-failed.length} modelli con dati per le previsioni emesse 3, 2 e 1 giorno prima.`+(failed.length?` Non disponibili: ${failed.join(', ')}.`:''));
+  renderChips(); renderAll();
+}
+
 async function run(){
   const s=st.station; if(!s) return;
-  const n=+$('period').value; const {start,end,days}=periodDates(n);
-  $('runBtn').disabled=true;
+  busy(true);
   setStatus(`Scarico le misure di ${s.name} e le previsioni dei modelli…`);
   try{
-    let done=0;
-    const tasks=MODELS.map(m=>async()=>{ const r=await fetchModel(m.id,days[0],ymd(new Date(tms(days[days.length-1])+24*HOUR)),s.lat.toFixed(4),s.lon.toFixed(4));
-      done++; setStatus(`Scarico le previsioni… ${done}/${MODELS.length} modelli`); return r; });
-    const [obsRaw, fcs]=await Promise.all([ s.src==='mh' ? fetchObsMH(s,days) : fetchObs(s.sid,start,end), pool(tasks,3) ]);
-    // forecasts per lead; a model that does not reach L days has no data there (judged on the leads it reaches)
-    const fcBy={}; LEADS.forEach(L=>{ fcBy[L]={}; MODELS.forEach((m,i)=>{ const r=fcs[i];
-      fcBy[L][m.id]= !r.ok ? r : L<=mmax(m.id) ? r.by[L] : {ok:false,err:`non arriva a ${L} giorni`,short:true}; }); });
-    const inPeriod=obsRaw.filter(o=>days.includes(o.s.slice(0,10))); inPeriod.noRain=obsRaw.noRain;
-    if(inPeriod.length<20) throw new Error(`poche o nessuna misura disponibile per ${s.src==='mh'?s.name:s.sid} nel periodo`);
-    if(!LEADS.some(L=>Object.values(fcBy[L]).some(f=>f.ok))) throw new Error('nessun modello ha risposto: riprova tra un minuto');
-    st.datas={}; LEADS.forEach(L=>{ if(Object.values(fcBy[L]).some(f=>f.ok)){ st.datas[L]=buildData(days,inPeriod,fcBy[L]); st.datas[L].station=s; st.datas[L].nObs=inPeriod.length; } });
-    $('results').classList.remove('hidden');
-    const failed=MODELS.filter(m=>!fcOk(m.id)).map(m=>m.label);
-    setStatus(`Fatto: ${inPeriod.length} ${s.src==='mh'?'misure della stazione':'bollettini dell’aeroporto'}, ${MODELS.length-failed.length} modelli con dati per le previsioni emesse 3, 2 e 1 giorno prima.`+(failed.length?` Non disponibili: ${failed.join(', ')}.`:''));
-    renderChips(); renderAll();
-  }catch(e){ setStatus('Errore: '+e.message,true); }
-  $('runBtn').disabled=false;
+    const set=await loadStation(s,+$('period').value,p=>setStatus(`Scarico le previsioni… ${p}`));
+    st.sets=[set]; st.skipped=[]; st.mode='one';
+    showResults(`Fatto: ${set.nObs} ${s.src==='mh'?'misure della stazione':'bollettini dell’aeroporto'},`);
+  }catch(e){ setStatus(`Errore: ${e.message} (${s.src==='mh'?s.name:s.sid})`,true); }
+  busy(false);
+}
+
+// The area: every official weather station found (MeteoNetwork left out, amateur sites vary too much)
+// and the airports within AIR_R km, or the nearest one when none is that close
+function areaStations(){
+  const off=st.stationList.filter(s=>s.src==='mh'&&s.net!=='mnw');
+  const air=st.stationList.filter(s=>s.src==='metar'), near=air.filter(s=>s.dist<=AIR_R);
+  return [...off, ...(near.length?near:air.slice(0,1))];
+}
+// Stations one at a time, so Open-Meteo and MeteoHub are not flooded; a station that fails is listed and skipped
+async function runAll(){
+  const list=areaStations(); if(!list.length) return;
+  busy(true);
+  const sets=[], skipped=[], n=+$('period').value;
+  for(const [i,s] of list.entries()){
+    const head=`Stazione ${i+1} di ${list.length}: ${s.name}…`;
+    setStatus(head);
+    try{ sets.push(await loadStation(s,n,p=>setStatus(`${head} (${p})`))); }
+    catch(e){ skipped.push({station:s, err:e.message}); }
+  }
+  if(sets.length){ st.sets=sets; st.skipped=skipped; st.mode='all';
+    showResults(`Fatto: ${sets.length} stazioni confrontate${skipped.length?`, ${skipped.length} scartate`:''},`); }
+  else setStatus('Errore: nessuna stazione con dati utilizzabili nel periodo.',true);
+  busy(false);
 }
 
 // ---------- Processing ----------
@@ -583,12 +627,12 @@ function accErrors(D,id){
   return E;
 }
 
-// Reliability over the three leads: for every kind of forecast and lead, the accuracy value (V) and the
-// placement among the models (R); a model's score is its mean placement over the leads it reaches, and only
-// when it has a value at all of them. Ties go to the lower mean relative value (value ÷ best of that lead).
-function scoreAll(){
-  const ids=activeOk(), q=st.acc/100, E={};
-  LEADS.forEach(L=>{ const D=st.datas[L]; E[L]={}; if(D) ids.forEach(id=>{ if(D.fc[id].ok) E[L][id]=accErrors(D,id); }); });
+// Reliability over the three leads at one station: for every kind of forecast and lead, the accuracy value (V)
+// and the placement among the models (R); a model's score is its mean placement over the leads it reaches, and
+// only when it has a value at all of them. Ties go to the lower mean relative value (value ÷ best of that lead).
+function scoreStation(datas,ids){
+  const q=st.acc/100, E={};
+  LEADS.forEach(L=>{ const D=datas[L]; E[L]={}; if(D) ids.forEach(id=>{ if(D.fc[id].ok) E[L][id]=accErrors(D,id); }); });
   const S={};
   ACC_K.forEach(([k])=>{
     const V={}, N={}, R={}, score={}, rel={};
@@ -602,7 +646,27 @@ function scoreAll(){
     const order=ids.filter(id=>score[id]!=null).sort((a,b)=>score[a]-score[b]||rel[a]-rel[b]);
     S[k]={V,N,R,score,rel,order};
   });
-  st.S=S; st.ids=ids;
+  return S;
+}
+// One station: its own result. The area: for every kind of forecast, the mean of the stations' scores over the
+// stations that measure it (each station weighs the same); a model needs a score at half of them at least.
+// `wins` counts the stations where it came first, `n` how many stations it was judged at.
+function scoreAll(){
+  const ids=activeOk();
+  st.per=st.sets.map(x=>scoreStation(x.datas,ids)); st.ids=ids;
+  if(st.mode==='one'){ st.S=st.per[0]; return; }
+  const S={};
+  ACC_K.forEach(([k])=>{
+    const P=st.per.map(p=>p[k]), use=P.filter(p=>p.order.length), need=Math.ceil(use.length/2);
+    const score={}, rel={}, wins={}, n={};
+    ids.forEach(id=>{ const got=use.filter(p=>p.score[id]!=null); n[id]=got.length; wins[id]=use.filter(p=>p.order[0]===id).length;
+      if(!got.length || got.length<need) return;
+      score[id]=got.reduce((a,p)=>a+p.score[id],0)/got.length;
+      rel[id]=got.reduce((a,p)=>a+p.rel[id],0)/got.length; });
+    const order=ids.filter(id=>score[id]!=null).sort((a,b)=>score[a]-score[b]||rel[a]-rel[b]);
+    S[k]={score,rel,wins,n,order,nSt:use.length};
+  });
+  st.S=S;
 }
 
 // ---------- Rendering ----------
@@ -612,20 +676,38 @@ function renderAll(){
   const v=st.acc, el=v>=80&&v<=89;
   document.querySelectorAll('.acc-l').forEach(e=>e.textContent=(el?'l’':'il ')+v);
   document.querySelectorAll('.acc-n').forEach(e=>e.textContent=(el?'nell’':'nel ')+v);
+  document.querySelectorAll('.one-only').forEach(e=>e.classList.toggle('hidden',st.mode!=='one'));
+  document.querySelectorAll('.all-only').forEach(e=>e.classList.toggle('hidden',st.mode!=='all'));
 }
-function fcOk(id){ return Object.values(st.datas).some(D=>D.fc[id].ok); }
+const allDatas=()=>st.sets.flatMap(x=>Object.values(x.datas));
+function fcOk(id){ return allDatas().some(D=>D.fc[id].ok); }
 function activeOk(){ return MODELS.filter(m=>st.active.has(m.id) && fcOk(m.id)).map(m=>m.id); }
-const hasMM=()=>Object.values(st.datas).some(D=>D.oP.some(x=>x!=null));
+const hasMM=()=>allDatas().some(D=>D.oP.some(x=>x!=null));
+const stName=s=>s.src==='mh'?s.name:`${s.name} (${s.sid})`;
+const stShort=s=>s.src==='metar'?s.sid:s.name.replace(/^MeteoNetwork · /,'').slice(0,16)+(s.name.length>16?'…':'');
 
 function renderMeta(){
-  const D=Object.values(st.datas)[0], s=D.station, p=st.place, mh=s.src==='mh';
+  const p=st.place;
+  if(st.mode==='all'){
+    const per=x=>`${x.days.length} gg`, span=d=>`${dayLabel(d[0])} – ${dayLabel(d[d.length-1])}`;
+    const lens=[...new Set(st.sets.map(x=>x.days.length))].sort((a,b)=>b-a);
+    const longest=st.sets.find(x=>x.days.length===lens[0]).days;
+    $('meta').innerHTML=`<span>Città: <b>${p.name}</b></span><span>Stazioni confrontate: <b>${st.sets.length}</b></span>`+
+      `<span>Periodo: <b>${span(longest)}</b>${lens.length>1?` (aeroporti ${lens[0]} giorni, stazioni meteo ${lens[lens.length-1]})`:` (${lens[0]} giorni)`}</span>`+
+      `<span style="flex-basis:100%">${st.sets.map(x=>`${stName(x.station)} <span class="na">· ${Math.round(x.station.dist)} km · ${per(x)}</span>`).join(' &nbsp;·&nbsp; ')}</span>`+
+      (st.skipped.length?`<span class="warn" style="flex-basis:100%">Scartate: ${st.skipped.map(x=>`${stName(x.station)} (${x.err})`).join('; ')}.</span>`:'')+
+      (st.sets.some(x=>x.station.src==='mh')?`<span>Dati stazioni meteo: MeteoHub – <a href="https://meteohub.agenziaitaliameteo.it/" target="_blank" rel="noopener">Agenzia ItaliaMeteo</a> (CC-BY 4.0)</span>`:'');
+    $('note').innerHTML = st.sets.length<3 ? `<div class="wnote">Solo ${st.sets.length} ${st.sets.length===1?'stazione':'stazioni'} con dati: la media della zona è poco più solida del confronto su una stazione.</div>` : '';
+    return;
+  }
+  const X=st.sets[0], D=Object.values(X.datas)[0], s=X.station, mh=s.src==='mh';
   const rainDays=D.days.filter(d=>D.od[d]&&D.od[d].rain).length;
   const src = mh ? `<span>Dati: <b>${MH_NETS[s.net][0]}</b> tramite <a href="https://meteohub.agenziaitaliameteo.it/" target="_blank" rel="noopener">MeteoHub – Agenzia ItaliaMeteo</a> (CC-BY 4.0)</span>` : '';
-  $('meta').innerHTML=`<span>Città: <b>${p.name}</b></span><span>Stazione: <b>${mh?s.name:`${s.name} (${s.sid})`}</b>, ${Math.round(s.dist)} km${s.elev!=null?`, ${Math.round(s.elev)} m s.l.m.`:''}</span>`+src+
+  $('meta').innerHTML=`<span>Città: <b>${p.name}</b></span><span>Stazione: <b>${stName(s)}</b>, ${Math.round(s.dist)} km${s.elev!=null?`, ${Math.round(s.elev)} m s.l.m.`:''}</span>`+src+
     `<span>Periodo: <b>${dayLabel(D.days[0])} – ${dayLabel(D.days[D.days.length-1])}</b> (${D.days.length} giorni)</span><span>Giorni di pioggia misurati: <b>${rainDays}</b></span>`+
     (s.dist>30?`<span class="warn">Stazione lontana dalla città: il confronto vale per quel punto.</span>`:'')+
     (mh&&s.net==='mnw'?`<span class="warn">Stazione amatoriale: la qualità della misura dipende da come è installata.</span>`:'');
-  $('note').innerHTML = D.days.length<14 ? `<div class="wnote">Con soli ${D.days.length} giorni la classifica può cambiare molto da una settimana all’altra: per un confronto più solido scegli 30 giorni.</div>` : '';
+  $('note').innerHTML = D.days.length<14 ? `<div class="wnote">Con soli ${D.days.length} giorni la classifica può cambiare molto da una settimana all’altra: per un confronto più solido scegli 30 giorni o “Confronta tutte le stazioni”.</div>` : '';
 }
 
 function ranks(ids,val,asc){
@@ -656,29 +738,45 @@ function positions(rows){ const P={}; let p=0, prev=null; rows.forEach((r,i)=>{ 
 
 // Summary: the three most reliable models for each kind of forecast; a click opens its detail
 function renderBest(){
-  const mm=hasMM();
+  const mm=hasMM(), all=st.mode==='all';
+  const tip=all?'Media delle posizioni medie nelle stazioni':'Posizione media a 3, 2 e 1 giorno';
   let h='<thead><tr><th class="l">Tipo di previsione</th><th class="l">1°</th><th class="l">2°</th><th class="l">3°</th></tr></thead><tbody>';
   ACC_K.forEach(([k,lab,u])=>{ const S=st.S[k], o=S.order;
     const cells = k[0]==='r'&&!mm ? '<td class="l na" colspan="3">solo con le stazioni meteo che misurano i millimetri</td>'
       : !o.length ? '<td class="l na" colspan="3">pochi casi per un giudizio</td>'
-      : [0,1,2].map(i=>{ const id=o[i]; return `<td class="l${i===0?' top':''}">${id?`${mdot(id)} ${mname(id)} <span class="na" title="Posizione media a 3, 2 e 1 giorno">(${fmt(S.score[id],1)})</span>`:''}</td>`; }).join('');
-    h+=`<tr class="pick${k===st.accVar?' sel':''}" data-k="${k}" title="Clicca per il dettaglio"><td class="l"><b>${lab}</b> <span class="na">(${u})</span></td>${cells}</tr>`; });
+      : [0,1,2].map(i=>{ const id=o[i]; return `<td class="l${i===0?' top':''}">${id?`${mdot(id)} ${mname(id)} <span class="na" title="${tip}">(${fmt(S.score[id],1)})</span>`:''}</td>`; }).join('');
+    const where = all&&S.nSt ? ` <span class="na">· ${S.nSt} ${S.nSt===1?'stazione':'stazioni'}</span>` : '';
+    h+=`<tr class="pick${k===st.accVar?' sel':''}" data-k="${k}" title="Clicca per il dettaglio"><td class="l"><b>${lab}</b> <span class="na">(${u})</span>${where}</td>${cells}</tr>`; });
   const t=$('bestTbl'); t.innerHTML=h+'</tbody>';
   t.querySelectorAll('tr.pick').forEach(tr=>tr.addEventListener('click',()=>{
     setAccVar(tr.dataset.k); renderBest(); renderDetail(); $('detailCard').scrollIntoView({behavior:'smooth',block:'start'}); }));
 }
 
-// Detail of one kind of forecast: every model's accuracy value and placement at 3, 2 and 1 day, and the mean placement
+// Detail of one kind of forecast. One station: every model's accuracy value and placement at 3, 2 and 1 day,
+// and the mean placement. All stations: every model's mean placement at each station, the stations won and the mean.
 function renderDetail(){
   const k=st.accVar, S=st.S[k], [,,u,dec]=ACC_K.find(x=>x[0]===k), mm=hasMM(), nd='<span class="na">n.d.</span>';
   const key=id=>S.score[id]!=null ? S.score[id]+S.rel[id]*1e-3 : null;
   const rows=st.ids.map(id=>({id,score:key(id)})).sort((a,b)=>(a.score??99)-(b.score??99));
-  const cols=LEADS.map(L=>({h:`${leadTxt(L).replace(' prima','<br>prima')} (${u})`, asc:true, v:id=>S.V[L][id], td:id=>{
-    if(L>mmax(id)) return `<td class="na">non arriva a ${L} gg</td>`;
-    const v=S.V[L][id], n=S.N[L][id]||0;
-    if(v==null) return `<td>${k[0]==='r'&&!mm?'<span class="na">solo stazioni meteo</span>':n?`<span class="na" title="Servono almeno ${ACC_MIN[k]} casi">pochi casi (${n})</span>`:nd}</td>`;
-    return `<td${S.R[L][id]===1?' class="top"':''} title="${st.acc}% dei ${n} casi entro ±${fmt(v,dec)} ${u}; ${S.R[L][id]}° tra i modelli a ${leadTxt(L)}">±${fmt(v,dec)} <span class="na">(${n}) · ${S.R[L][id]}°</span></td>`; }}));
-  cols.push({h:'Posizione<br>media', asc:true, v:key, td:id=>`<td${S.order[0]===id?' class="top"':''}>${S.score[id]!=null?`<b>${fmt(S.score[id],1)}</b>`:'<span class="na" title="Manca il valore a qualche scadenza">–</span>'}</td>`});
+  let cols;
+  if(st.mode==='all'){
+    const sts=st.sets.map((x,i)=>({x,P:st.per[i][k]})).filter(o=>o.P.order.length);
+    cols=sts.map(({x,P})=>({h:`<span title="${stName(x.station)}, ${Math.round(x.station.dist)} km, ${x.days.length} giorni">${stShort(x.station)}<br><span class="na">${Math.round(x.station.dist)} km</span></span>`, asc:true,
+      v:id=>P.score[id]!=null?P.score[id]+P.rel[id]*1e-3:null, td:id=>{
+        if(P.score[id]==null) return `<td><span class="na" title="Mancano i dati o i casi sono pochi">–</span></td>`;
+        const vals=LEADS.filter(L=>P.V[L][id]!=null).map(L=>`${L} gg ±${fmt(P.V[L][id],dec)} ${u} (${P.R[L][id]}°)`).join(', ');
+        return `<td${P.order[0]===id?' class="top"':''} title="${stName(x.station)}: ${vals}">${fmt(P.score[id],1)}</td>`; }}));
+    cols.push({h:'Stazioni<br>vinte', asc:false, v:id=>S.wins[id], td:id=>`<td>${S.wins[id]?`<b>${S.wins[id]}</b>`:'<span class="na">0</span>'} <span class="na">su ${S.n[id]}</span></td>`});
+  } else {
+    cols=LEADS.map(L=>({h:`${leadTxt(L).replace(' prima','<br>prima')} (${u})`, asc:true, v:id=>S.V[L][id], td:id=>{
+      if(L>mmax(id)) return `<td class="na">non arriva a ${L} gg</td>`;
+      const v=S.V[L][id], n=S.N[L][id]||0;
+      if(v==null) return `<td>${k[0]==='r'&&!mm?'<span class="na">solo stazioni meteo</span>':n?`<span class="na" title="Servono almeno ${ACC_MIN[k]} casi">pochi casi (${n})</span>`:nd}</td>`;
+      return `<td${S.R[L][id]===1?' class="top"':''} title="${st.acc}% dei ${n} casi entro ±${fmt(v,dec)} ${u}; ${S.R[L][id]}° tra i modelli a ${leadTxt(L)}">±${fmt(v,dec)} <span class="na">(${n}) · ${S.R[L][id]}°</span></td>`; }}));
+  }
+  cols.push({h:'Posizione<br>media', asc:true, v:key, td:id=>`<td${S.order[0]===id?' class="top"':''}>${S.score[id]!=null?`<b>${fmt(S.score[id],1)}</b>`:`<span class="na" title="${st.mode==='all'?'Giudicato in meno di metà delle stazioni':'Manca il valore a qualche scadenza'}">–</span>`}</td>`});
+  // the columns change between the two modes: a sort on a column that is gone falls back to the ranking
+  if(st.sort.accTbl && st.sort.accTbl.col>=cols.length) st.sort.accTbl=null;
   sortTable('accTbl',cols,rows,positions(rows));
   $('accVar').value=k;
 }
@@ -691,6 +789,7 @@ window.addEventListener('unhandledrejection',e=>setStatus('Errore: '+(e.reason&&
 $('searchBtn').addEventListener('click',search);
 $('city').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
 $('runBtn').addEventListener('click',run);
+$('runAllBtn').addEventListener('click',runAll);
 $('allBtn').addEventListener('click',()=>selectModels(MODELS.map(m=>m.id)));
 $('defBtn').addEventListener('click',()=>selectModels(MODELS.filter(m=>m.def).map(m=>m.id)));
 // accuracy percentage and kind of forecast in the detail, remembered by the browser
@@ -698,11 +797,11 @@ try{ const v=+localStorage.getItem('mb_acc'); if(v>=50&&v<=99) st.acc=v; }catch(
 try{ const v=localStorage.getItem('mb_accVar'); if(ACC_K.some(x=>x[0]===v)) st.accVar=v; }catch(e){}
 $('accIn').value=st.acc;
 $('accIn').addEventListener('input',e=>{ const v=+e.target.value; if(!(v>=50&&v<=99)) return; st.acc=v;
-  try{ localStorage.setItem('mb_acc',String(v)); }catch(err){} if(st.datas) renderAll(); });
+  try{ localStorage.setItem('mb_acc',String(v)); }catch(err){} if(st.sets) renderAll(); });
 $('accVar').innerHTML=ACC_K.map(([k,l])=>`<option value="${k}">${l}</option>`).join('');
 $('accVar').value=st.accVar;
-$('accVar').addEventListener('change',e=>{ setAccVar(e.target.value); if(st.datas){ renderBest(); renderDetail(); } });
-try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ renderChips(); if(st.datas) renderAll(); }); }catch(e){}
+$('accVar').addEventListener('change',e=>{ setAccVar(e.target.value); if(st.sets){ renderBest(); renderDetail(); } });
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ renderChips(); if(st.sets) renderAll(); }); }catch(e){}
 </script>
 </body>
 </html>

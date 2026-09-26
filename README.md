@@ -31,9 +31,14 @@ Lo scarto si calcola tre volte, sulle previsioni emesse **3, 2 e 1 giorno prima*
 
 **Ore della pioggia.** Come indica Open-Meteo, la pioggia oraria è la *somma dell’ora precedente*: il valore delle 11:00 è la pioggia caduta tra le 10 e le 11. Le misure sono abbinate allo stesso modo, e il totale di un giorno va dal valore delle 01:00 a quello delle 24:00. Temperatura e vento sono invece i valori a quell’ora. Tutti gli orari sono in ora italiana (le stazioni MeteoHub, in UTC, vengono convertite).
 
+### Confronta tutte le stazioni
+
+Il modello migliore cambia spesso da una stazione all’altra: 7 giorni sono pochi, ogni stazione ha la sua posizione (città, collina, quota) e differenze di un decimo di grado spostano un modello di un posto. Per avere un’indicazione valida per la zona, il pulsante **«Confronta tutte le stazioni»** fa lo stesso giudizio su tutte le stazioni meteo ufficiali entro 25 km e sugli aeroporti entro 50 km (o sul più vicino), poi fa la **media delle posizioni medie**: ogni stazione pesa uguale. MeteoNetwork resta fuori perché le stazioni amatoriali sono troppo diverse tra loro. Gli aeroporti usano il periodo scelto, le stazioni meteo al massimo 7 giorni. Per ogni tipo di previsione entra in classifica solo un modello giudicato in almeno metà delle stazioni che lo misurano; il dettaglio mostra una colonna per stazione e in quante stazioni ogni modello è arrivato primo. Le stazioni vengono scaricate una alla volta, quindi il caricamento richiede più tempo.
+
 ## Cosa mostra la pagina
 
 - **Modelli più affidabili**: per ogni tipo di previsione i tre modelli con la posizione media migliore sulle previsioni a 3, 2 e 1 giorno, con la posizione media tra parentesi. Un clic su una riga apre il dettaglio.
+- **Dettaglio** con «Confronta tutte le stazioni»: una colonna per stazione con la posizione media del modello in quella stazione, poi le stazioni vinte e la media.
 - **Dettaglio**: per il tipo di previsione scelto, tutti i modelli con lo scarto per l’80% a 3, 2 e 1 giorno (con il numero di casi e il piazzamento a quella scadenza) e la posizione media. Il migliore di ogni colonna è in giallo; si ordina cliccando l’intestazione di una colonna.
 - **Periodo selezionabile**: ultimi 7, 14 o 30 giorni (default 30).
 
