@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.0 — 26/09/2026
+- La pagina ora risponde a una sola domanda: **quali modelli sono più affidabili per ogni tipo di previsione**, usando solo lo scarto per l’80% e giudicando insieme le previsioni emesse 3, 2 e 1 giorno prima.
+- Nuova tabella **«Modelli più affidabili»**: per ogni tipo di previsione (temperatura ora per ora, massima, minima; vento medio e massimo; pioggia del giorno, oraria e a 3 ore) i tre modelli con la miglior posizione media sulle tre scadenze. Un clic su una riga apre il dettaglio.
+- Nuova tabella **«Dettaglio»**: per il tipo scelto, tutti i modelli con lo scarto a 3, 2 e 1 giorno, il piazzamento a ogni scadenza e la posizione media; ordinabile. Il tipo scelto viene ricordato.
+- ItaliaMeteo ICON-2I, che non arriva a 3 giorni, è giudicato solo a 2 e 1 giorno (prima a 3 giorni usava la previsione di 2 giorni, più facile).
+- Tolte le schede 3/2/1 giorno, la Classifica a punti (con le soglie), la Classifica per errore e la sezione Giorno per giorno.
+
 ## v2.1.0 — 24/09/2026
 - Nuova prima tabella **«Scarto per l’80%»**: per ogni modello e ogni tipo di previsione, lo scarto più piccolo entro cui cade l’80% delle previsioni (temperatura ora per ora, massima e minima del giorno, vento medio ora per ora, vento massimo del giorno, pioggia del giorno, oraria e a 3 ore in mm). Più basso è meglio; percentuale impostabile (50–99%), ricordata dal browser.
 - La pioggia in mm è calcolata solo con le stazioni meteo e solo sui periodi in cui è piovuto o era prevista pioggia; con meno di 5 casi il valore non è mostrato.
